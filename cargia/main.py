@@ -21,8 +21,19 @@ class MainWindow(QMainWindow):
         # Create demonstration examples view
         demo_view = QGroupBox("Task Demonstration")
         demo_layout = QVBoxLayout()
-        self.task_preview = GridWidget(3, 3)
-        demo_layout.addWidget(self.task_preview)
+        
+        # Add input and output grids for training pairs
+        self.input_grid = GridWidget(3, 3)
+        self.output_grid = GridWidget(3, 3)
+        demo_layout.addWidget(QLabel("Input:"))
+        demo_layout.addWidget(self.input_grid)
+        demo_layout.addWidget(QLabel("Output:"))
+        demo_layout.addWidget(self.output_grid)
+        
+        # Add navigation button
+        self.next_pair_btn = QPushButton("Show next train pair")
+        demo_layout.addWidget(self.next_pair_btn)
+        
         demo_view.setLayout(demo_layout)
         
         # Create evaluation view
@@ -71,13 +82,17 @@ class MainWindow(QMainWindow):
         
         # Connect signals
         self.load_task_btn.clicked.connect(self.load_task)
+        self.next_pair_btn.clicked.connect(self.next_pair)
         self.next_test_btn.clicked.connect(self.next_test_input)
         self.show_symbols_check.stateChanged.connect(self.toggle_symbol_visibility)
         
         # Initialize state
         self.current_task = None
+        self.current_train_index = 0
         self.current_test_index = 0
         self.test_inputs = []
+        self.train_pairs = []
+        self.showing_test = False
     
     def load_task(self):
         file_name, _ = QFileDialog.getOpenFileName(
@@ -92,11 +107,12 @@ class MainWindow(QMainWindow):
                     self.current_task = json.load(f)
                     self.task_name_label.setText(f"Task name: {self.current_task.get('name', 'Unnamed Task')}")
                     
-                    # Load demonstration examples
+                    # Load training pairs
                     if 'train' in self.current_task:
-                        # For now, just show the first training example
-                        example = self.current_task['train'][0]
-                        self.task_preview.setGridData(example['input'])
+                        self.train_pairs = self.current_task['train']
+                        self.current_train_index = 0
+                        self.showing_test = False
+                        self.update_train_display()
                         
                     # Load test inputs
                     if 'test' in self.current_task:
@@ -106,12 +122,52 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 print(f"Error loading task: {e}")
     
+    def update_train_display(self):
+        if self.train_pairs:
+            pair = self.train_pairs[self.current_train_index]
+            # Resize grids to match the input/output dimensions
+            rows = len(pair['input'])
+            cols = len(pair['input'][0])
+            self.input_grid.resizeGrid(rows, cols)
+            self.output_grid.resizeGrid(rows, cols)
+            
+            # Set the grid data
+            self.input_grid.setGridData(pair['input'])
+            self.output_grid.setGridData(pair['output'])
+            
+            # Update button text
+            if self.current_train_index < len(self.train_pairs) - 1:
+                self.next_pair_btn.setText("Show next train pair")
+            else:
+                self.next_pair_btn.setText("Show TEST input")
+    
     def update_test_display(self):
         if self.test_inputs:
             self.test_input_counter.setText(
                 f"Test input grid {self.current_test_index + 1}/{len(self.test_inputs)}"
             )
-            self.test_input_grid.setGridData(self.test_inputs[self.current_test_index])
+            # Resize grid to match test input dimensions
+            test_input = self.test_inputs[self.current_test_index]
+            rows = len(test_input)
+            cols = len(test_input[0])
+            self.test_input_grid.resizeGrid(rows, cols)
+            self.test_input_grid.setGridData(test_input)
+    
+    def next_pair(self):
+        if not self.showing_test:
+            if self.current_train_index < len(self.train_pairs) - 1:
+                self.current_train_index += 1
+                self.update_train_display()
+            else:
+                # Switch to showing test inputs
+                self.showing_test = True
+                self.current_test_index = 0
+                self.update_test_display()
+                self.next_pair_btn.setText("Show next test input")
+        else:
+            if self.test_inputs:
+                self.current_test_index = (self.current_test_index + 1) % len(self.test_inputs)
+                self.update_test_display()
     
     def next_test_input(self):
         if self.test_inputs:
