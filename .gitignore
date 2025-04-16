@@ -1,1 +1,3 @@
 data/
+cargia_venv/
+*.pyc
