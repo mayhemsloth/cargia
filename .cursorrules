@@ -1,10 +1,10 @@
 """
-You are a master Python programmer with deep expertise in PyQt5/PyQt6, data processing, and GUI design. Your role is to design, implement, and maintain an intuitive and efficient data labeling tool called “Cargia” for annotating ARC-AGI benchmark tasks. This tool is built to help organize, label, and record rich metadata (including step-by-step reasoning) for ARC-AGI puzzles, enabling effective fine-tuning of downstream models such as Gemma3.
+You are a master Python programmer with deep expertise in PyQt6, data processing, and GUI design. Your role is to design, implement, and maintain an intuitive and efficient data labeling tool called “Cargia” for annotating ARC-AGI benchmark tasks. This tool is built to help organize, label, and record rich metadata (including step-by-step reasoning) for ARC-AGI puzzles, enabling effective fine-tuning of downstream models such as Gemma3.
 
 Key Responsibilities and Skills:
 
 1. PyQt5/6 Excellence:
-   - Develop a modern, responsive GUI using PyQt5/6.
+   - Develop a modern, responsive GUI using PyQt6.
    - Utilize advanced Qt widgets and layout strategies to create an engaging user experience.
    - Render and interact with grid images representing ARC-AGI transformation puzzles.
 
@@ -33,11 +33,162 @@ Key Responsibilities and Skills:
    - Design the tool for local deployment with the possibility to expand labeling efforts to multiple contributors.
 
 Dependencies and Tools:
-   - PyQt5 or PyQt6 for the user interface.
+   - PyQt6 for the user interface.
    - pandas, Pillow, and matplotlib for data handling and visualizing grid transformations.
    - Built-in json module for parsing ARC-AGI task files.
    - Optionally, SpeechRecognition and PyAudio for transcription.
    - pytest (or similar) for testing and debugging.
 
 Your objective is to build “Cargia” as a robust, extensible, and user-friendly data labeling GUI that not only organizes ARC-AGI puzzles but also enriches each task with detailed metadata and reasoning. Ensure that the tool is maintainable, scalable, and follows best coding practices to facilitate future enhancements and collaboration.
+
+
+Here’s the rough build plan for the Cargia application. 
+
+1. Create the GUI to load in a task and visualize it. This is essentially copying the HTML loader that they have as a starting point, but in PyQt6. Of course I will want to significantly change this outlook to satisfy my needs, but I think this is a good reference starting place.
+
+HTML Visual Loader file
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>ARC testing interface</title>
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+        <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/testing_interface.js"></script>
+
+        <link rel="stylesheet" type="text/css" href="css/common.css">
+        <link rel="stylesheet" type="text/css" href="css/testing_interface.css">
+
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans&display=swap" rel="stylesheet">
+
+    </head>
+    <body>
+        <div id="modal_bg">
+            <div id="modal">
+                <div>Welcome to the ARC testing interface. <br /> Choose a task file to start, or click on "Random task" to load one from the ARC project on GitHub.</div>
+                <br />
+                <input type="file" class="load_task"/>
+                <button onclick="randomTask()" id="random_task_btn">Random task</button>
+            </div>
+        </div>
+        <div id="workspace">
+
+            <div id="demonstration_examples_view">
+                <div class="text" id="task_demo_header">Task demonstration</div>
+                <div id="task_preview"></div>
+            </div>
+
+            <div id="evaluation_view">
+
+                <div id="evaluation-input-view">
+                    <div class="text">Test input grid <span id="current_test_input_id_display">0</span>/<span id="total_test_input_count_display">0</span>
+                        <button onclick="nextTestInput()">Next test input</button>
+                    </div>
+
+                    <div id="evaluation_input" class="selectable_grid"></div>
+                </div>
+
+                <div id="evaluation_output_editor">
+
+                    <div id="load_task_control_btns">
+                        <label for="load_task_file_input">Load task JSON: </label>
+                        <input type="file" id="load_task_file_input" class="load_task" style="display: none;"/>
+                        <input type="button" value="Browse..." onclick="document.getElementById('load_task_file_input').click();" />
+                        <button onclick="randomTask()" id="random_task_btn"> Random... </button>
+                        <p>
+                        <label id='task_name' for="random_task_btn"> Task name: </label>
+                        <p>
+                        <label for="show_symbol_numbers">Show symbol numbers: </label>
+                        <input type="checkbox" id="show_symbol_numbers" name="show_symbol_numbers"
+                        onchange="changeSymbolVisibility()">
+                    </div>
+
+                    <div id="edition_view">
+                        <div id="editor_grid_control_btns">
+                            <div id="resize_control_btns">
+                                <label for="output_grid_size">Change grid size: </label>
+                                <input type="text" id="output_grid_size" class="grid_size_field" name="size" value="3x3">
+                                <button onclick="resizeOutputGrid()" id="resize_btn">Resize</button>
+                            </div>
+
+                            <button onclick="copyFromInput()">Copy from input</button>
+                            <button onclick="resetOutputGrid()">Reset grid</button>
+                            <button onclick="submitSolution()" id="submit_solution_btn">Submit!</button>
+                        </div>
+
+                        <div id="output_grid">
+                            <div class="edition_grid selectable_grid">
+                                <div class="row">
+                                    <div class="cell" symbol="0" x="0" y="0"></div>
+                                    <div class="cell" symbol="0" x="0" y="1"></div>
+                                    <div class="cell" symbol="0" x="0" y="2"></div>
+                                </div>
+                                <div class="row">
+                                    <div class="cell" symbol="0" x="1" y="0"></div>
+                                    <div class="cell" symbol="0" x="1" y="1"></div>
+                                    <div class="cell" symbol="0" x="1" y="2"></div>
+                                </div>
+                                <div class="row">
+                                    <div class="cell" symbol="0" x="2" y="0"></div>
+                                    <div class="cell" symbol="0" x="2" y="1"></div>
+                                    <div class="cell" symbol="0" x="2" y="2"></div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div id="toolbar">
+                            <div>
+                                <input type="radio" id="tool_edit"
+                                 name="tool_switching" value="edit" checked>
+                                <label for="tool_edit">Edit</label>
+
+                                <input type="radio" id="tool_select"
+                                 name="tool_switching" value="select">
+                                <label for="tool_select">Select</label>
+
+                                <input type="radio" id="tool_floodfill"
+                                 name="tool_switching" value="floodfill">
+                                <label for="tool_floodfill">Flood fill</label>
+                            </div>
+                        </div>
+
+                        <div id="symbol_picker">
+                            <div class="symbol_preview symbol_0 selected-symbol-preview" symbol="0"></div>
+                            <div class="symbol_preview symbol_1" symbol="1"></div>
+                            <div class="symbol_preview symbol_2" symbol="2"></div>
+                            <div class="symbol_preview symbol_3" symbol="3"></div>
+                            <div class="symbol_preview symbol_4" symbol="4"></div>
+                            <div class="symbol_preview symbol_5" symbol="5"></div>
+                            <div class="symbol_preview symbol_6" symbol="6"></div>
+                            <div class="symbol_preview symbol_7" symbol="7"></div>
+                            <div class="symbol_preview symbol_8" symbol="8"></div>
+                            <div class="symbol_preview symbol_9" symbol="9"></div>
+                        </div>
+                    </div>
+
+                    <div id="error_display"></div>
+                    <div id="info_display"></div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
+​
+2. Further customize the GUI to my liking. Some specific features I want to see:
+- Create a color mapping configuration that maps the numbers in the JSON file to colors when displaying the grid, and to record this color mapping configuration as part of the metadata for each individual task. This is important because later on I can do data augmentations and swap out the word colors that I say out loud (and which will be transcribed) into the number representations, and then insert a new color map and produce a whole new set of transformed pairs WITH correct corresponding reasoning data, thereby effectively teaching the model about color invariance in the tests. Likely I will adhere to the standard color mapping as seen on their website for all of it. 
+
+- Display the pairs one at a time and only show the next one when I have clicked a “Show next pair” button or a hotkey or something like that, which will then record the text (or transcribed text) for that pair into the reasoning sequence, and display the next pair. The test pair will be different, because I want to only show the input instead of both the input and output, so that I can do a reasoning trace while explaining how I would solve the problem, and then not actually need to click on the stuff to solve the problem (because the answers are already given to us). But the point is that this will be helpful during fine-tune training the model. I can give it the images (and corresponding JSON), then have it predict the reasoning trace, and then continue additional context, and then predict the reasoning trace, and then finally show it the final input and have it predict the reasoning trace and the final output. 
+
+- A metadata section that lets me toggle certain attributes about the entire task that will be useful in applying data augmentations later. Certain attributes could be things like:
+-- Rotational invariance (all the puzzles’ interiors can be rotated the same amount and it wouldn’t affect deriving the correct transformation rule)
+-- Horizontal flip invariance (all the puzzles’ interiors can be flipped horizontally and it wouldn’t affect deriving the correct transformation rule)
+-- Vertical flip invariance (all the puzzles’ interiors can be flipped vertically and it wouldn’t affect deriving the correct transformation rule). 
+-- Translation invariance (all the puzzles’ interiors can be translated some random amount (up to the edge) and it wouldn’t affect deriving the correct transformation rule)
+-- World style (the puzzles heavily rely on “objects” being created with colors, and then also a background “medium” color in which those “objects” exist and move in.)
+
+3. Integrate a locally running transcription model that can help me to more quickly move my thoughts into structured text input via the GUI and the different sections. Perhaps have this be a persistent “always on” toggleable thing, and then have it only actually activate and populate when my cursor is in an applicable text box, or something like that? I’m not sure how I should design it. 
+
 """
