@@ -1,151 +1,215 @@
-from PyQt6.QtWidgets import QWidget, QGridLayout, QPushButton
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QColor, QPainter, QPen
-import json
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel
+from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtGui import QImage, QPixmap
+from PIL import Image
+import numpy as np
+from grid_utils import GridImageBuilder, ColorConfig
+import traceback
 import os
+from datetime import datetime
 
-class ColorConfig:
-    _instance = None
-    _config = None
-    
-    @classmethod
-    def get_instance(cls):
-        if cls._instance is None:
-            cls._instance = cls()
-        return cls._instance
-    
-    def __init__(self):
-        if self._config is None:
-            config_path = os.path.join(os.path.dirname(__file__), 'color_config.json')
-            with open(config_path, 'r') as f:
-                self._config = json.load(f)
-    
-    def get_color(self, symbol):
-        symbol_str = str(symbol)
-        if symbol_str in self._config:
-            rgb = self._config[symbol_str]['color']
-            return QColor(rgb[0], rgb[1], rgb[2])
-        return QColor(255, 255, 255)  # Default to white
-    
-    def get_name(self, symbol):
-        symbol_str = str(symbol)
-        if symbol_str in self._config:
-            return self._config[symbol_str]['name']
-        return "unknown"
-
-class GridCell(QPushButton):
-    clicked = pyqtSignal(int, int)  # x, y coordinates
-    
-    def __init__(self, x, y, parent=None):
-        super().__init__(parent)
-        self.x = x
-        self.y = y
-        self.symbol = 0  # Default symbol (0 represents empty/background)
-        self.setFixedSize(30, 30)
-        self.clicked.connect(lambda: self.clicked.emit(self.x, self.y))
-        self.color_config = ColorConfig.get_instance()
-        
-    def setSymbol(self, symbol):
-        self.symbol = symbol
-        self.update()
-        
-    def paintEvent(self, event):
-        super().paintEvent(event)
-        painter = QPainter(self)
-        painter.setPen(QPen(Qt.GlobalColor.black))
-        
-        # Draw the cell background based on symbol
-        color = self.color_config.get_color(self.symbol)
-        painter.fillRect(self.rect(), color)
-        
-        # Draw border
-        painter.drawRect(self.rect())
-        
-    def getColorName(self):
-        return self.color_config.get_name(self.symbol)
+def log_error(message, error=None):
+    """Helper function to log errors with traceback"""
+    print(f"\nERROR: {message}")
+    if error:
+        print(f"Exception: {str(error)}")
+        print("Traceback:")
+        traceback.print_exc()
+    print("-" * 80)
 
 class GridWidget(QWidget):
     def __init__(self, rows=3, cols=3, parent=None):
-        super().__init__(parent)
-        self.rows = rows
-        self.cols = cols
-        self.cells = []
-        self.selected_tool = "edit"  # Default tool
-        self.selected_symbol = 0     # Default symbol
-        
-        self.initUI()
-        
-    def initUI(self):
-        layout = QGridLayout()
-        layout.setSpacing(0)
-        self.setLayout(layout)
-        
-        # Create grid cells
-        for row in range(self.rows):
-            for col in range(self.cols):
-                cell = GridCell(row, col)
-                cell.clicked.connect(self.handleCellClick)
-                layout.addWidget(cell, row, col)
-                self.cells.append(cell)
-                
-    def handleCellClick(self, x, y):
-        if self.selected_tool == "edit":
-            self.setCellSymbol(x, y, self.selected_symbol)
-        elif self.selected_tool == "select":
-            # TODO: Implement selection functionality
-            pass
-        elif self.selected_tool == "floodfill":
-            # TODO: Implement flood fill functionality
-            pass
+        try:
+            super().__init__(parent)
+            self.rows = rows
+            self.cols = cols
+            self.grid_data = None  # Initialize as None instead of empty grid
+            self.image_label = QLabel()
+            self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.image_label.setMinimumSize(1, 1)  # Allow the label to shrink
             
-    def setCellSymbol(self, x, y, symbol):
-        for cell in self.cells:
-            if cell.x == x and cell.y == y:
-                cell.setSymbol(symbol)
-                break
-                
-    def setTool(self, tool):
-        self.selected_tool = tool
+            # Initialize the image builder with default settings
+            self.image_builder = GridImageBuilder()
+            
+            # Cache for the PIL image
+            self._cached_pil_image = None
+            self._cached_grid_data = None
+            
+            # Debug flag to control debug image saving
+            self._save_debug_images = False
+            
+            layout = QVBoxLayout()
+            layout.addWidget(self.image_label)
+            self.setLayout(layout)
+            
+            # Show initial placeholder message
+            self.show_placeholder_message()
+            print("GridWidget initialized with placeholder message")
+        except Exception as e:
+            log_error("Failed to initialize GridWidget", e)
+            raise
         
-    def setSelectedSymbol(self, symbol):
-        self.selected_symbol = symbol
+    def show_placeholder_message(self):
+        """Show a placeholder message when no task is loaded"""
+        self.image_label.setText("No task loaded. Please load task to start.")
+        self.image_label.setStyleSheet("color: gray; font-size: 14px;")
+        
+    def update_display(self):
+        try:
+            if self.grid_data is None:
+                self.show_placeholder_message()
+                return
+                
+            print(f"Updating display for {len(self.grid_data)}x{len(self.grid_data[0])} grid")
+            
+            # Only generate new PIL image if grid data has changed
+            if self._cached_grid_data != self.grid_data:
+                print("Grid data changed, generating new image")
+                # Convert grid to PIL image using the image builder
+                self._cached_pil_image = self.image_builder.build(self.grid_data)
+                self._cached_grid_data = [row[:] for row in self.grid_data]  # Deep copy
+                
+                if self._cached_pil_image is None:
+                    print("Failed to convert grid to image")
+                    return
+                    
+                # Save debug image only when generating new image and debug flag is True
+                if self._save_debug_images:
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+                    debug_path = os.path.join("debug_images", f"grid_{timestamp}.png")
+                    self._cached_pil_image.save(debug_path)
+                    print(f"Saved debug image to {debug_path}")
+            
+            # Convert PIL image to QImage
+            if self._cached_pil_image.mode != 'RGB':
+                self._cached_pil_image = self._cached_pil_image.convert('RGB')
+            
+            # Get image dimensions
+            width, height = self._cached_pil_image.size
+            
+            # Convert to bytes
+            data = self._cached_pil_image.tobytes('raw', 'RGB')
+            
+            # Create QImage with correct format
+            qimage = QImage(data, width, height, width * 3, QImage.Format.Format_RGB888)
+            
+            if qimage.isNull():
+                print("Failed to create QImage")
+                return
+            
+            # Convert to QPixmap
+            pixmap = QPixmap.fromImage(qimage)
+            
+            if pixmap.isNull():
+                print("Failed to create QPixmap")
+                return
+            
+            # Scale the pixmap to fill the available space while maintaining aspect ratio
+            self._update_pixmap_scaling(pixmap)
+            print(f"Display updated successfully with image size: {width}x{height}")
+        except Exception as e:
+            log_error("Failed to update display", e)
+            raise  # Re-raise the exception to see the full traceback
+        
+    def _update_pixmap_scaling(self, pixmap):
+        """Helper method to update pixmap scaling based on current widget size"""
+        if pixmap.isNull():
+            return
+            
+        # Get the available size of the label
+        label_size = self.image_label.size()
+        
+        # Calculate the optimal size while maintaining aspect ratio
+        pixmap_ratio = pixmap.width() / pixmap.height()
+        label_ratio = label_size.width() / label_size.height()
+        
+        if pixmap_ratio > label_ratio:
+            # Image is wider than the label, scale to label width
+            target_width = label_size.width()
+            target_height = int(target_width / pixmap_ratio)
+        else:
+            # Image is taller than the label, scale to label height
+            target_height = label_size.height()
+            target_width = int(target_height * pixmap_ratio)
+            
+        # Create target size
+        target_size = QSize(target_width, target_height)
+        
+        # Scale the pixmap while maintaining aspect ratio
+        scaled_pixmap = pixmap.scaled(
+            target_size,
+            Qt.AspectRatioMode.IgnoreAspectRatio,  # We already calculated the correct aspect ratio
+            Qt.TransformationMode.SmoothTransformation
+        )
+        
+        # Set the pixmap
+        self.image_label.setPixmap(scaled_pixmap)
+        
+    def resizeEvent(self, event):
+        try:
+            super().resizeEvent(event)
+            # Only update the display scaling if we have a valid image
+            if self._cached_pil_image is not None and self.grid_data is not None:
+                # Convert the cached PIL image to QPixmap
+                data = self._cached_pil_image.tobytes('raw', 'RGB')
+                qimage = QImage(data, self._cached_pil_image.width, self._cached_pil_image.height, 
+                              self._cached_pil_image.width * 3, QImage.Format.Format_RGB888)
+                pixmap = QPixmap.fromImage(qimage)
+                self._update_pixmap_scaling(pixmap)
+        except Exception as e:
+            log_error("Failed to handle resize event", e)
         
     def resizeGrid(self, rows, cols):
-        # Remove existing cells
-        for cell in self.cells:
-            self.layout().removeWidget(cell)
-            cell.deleteLater()
-        self.cells.clear()
+        try:
+            print(f"Resizing grid to {rows}x{cols}")
+            self.rows = rows
+            self.cols = cols
+            self.grid_data = [[0 for _ in range(cols)] for _ in range(rows)]
+            self._cached_pil_image = None  # Clear cache when grid size changes
+            self._cached_grid_data = None
+            self.update_display()
+        except Exception as e:
+            log_error("Failed to resize grid", e)
         
-        # Update dimensions
-        self.rows = rows
-        self.cols = cols
-        
-        # Create new cells
-        for row in range(rows):
-            for col in range(cols):
-                cell = GridCell(row, col)
-                cell.clicked.connect(self.handleCellClick)
-                self.layout().addWidget(cell, row, col)
-                self.cells.append(cell)
-                
     def getGridData(self):
-        data = []
-        for row in range(self.rows):
-            row_data = []
-            for col in range(self.cols):
-                for cell in self.cells:
-                    if cell.x == row and cell.y == col:
-                        row_data.append(cell.symbol)
-                        break
-            data.append(row_data)
-        return data
+        return self.grid_data
         
     def setGridData(self, data):
-        for row in range(min(self.rows, len(data))):
-            for col in range(min(self.cols, len(data[row]))):
-                self.setCellSymbol(row, col, data[row][col])
+        try:
+            if not data:
+                print("No data provided to setGridData")
+                self.grid_data = None
+                self.show_placeholder_message()
+                return
                 
+            if not isinstance(data, list):
+                print(f"Invalid data type: {type(data)}")
+                self.grid_data = None
+                self.show_placeholder_message()
+                return
+                
+            if not data[0] or not isinstance(data[0], list):
+                print("Invalid grid structure")
+                self.grid_data = None
+                self.show_placeholder_message()
+                return
+                
+            print(f"Setting grid data with dimensions {len(data)}x{len(data[0])}")
+            self.rows = len(data)
+            self.cols = len(data[0]) if self.rows > 0 else 0
+            self.grid_data = data
+            self.update_display()
+        except Exception as e:
+            log_error("Failed to set grid data", e)
+            self.grid_data = None
+            self.show_placeholder_message()
+        
     def resetGrid(self):
-        for cell in self.cells:
-            cell.setSymbol(0) 
+        try:
+            print("Resetting grid")
+            self.grid_data = None
+            self.show_placeholder_message()
+        except Exception as e:
+            log_error("Failed to reset grid", e)
+            self.grid_data = None
+            self.show_placeholder_message() 

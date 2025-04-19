@@ -1,42 +1,42 @@
 {
     "0": {
-        "color": [255, 255, 255],
-        "name": "white"
+        "name": "black",
+        "color": [0, 0, 0]
     },
     "1": {
-        "color": [0, 0, 0],
-        "name": "black"
+        "name": "blue",
+        "color": [0, 0, 255]
     },
     "2": {
-        "color": [255, 0, 0],
-        "name": "red"
+        "name": "red",
+        "color": [255, 0, 0]
     },
     "3": {
-        "color": [0, 255, 0],
-        "name": "green"
+        "name": "green",
+        "color": [0, 255, 0]
     },
     "4": {
-        "color": [0, 0, 255],
-        "name": "blue"
+        "name": "yellow",
+        "color": [255, 255, 0]
     },
     "5": {
-        "color": [255, 255, 0],
-        "name": "yellow"
+        "name": "gray",
+        "color": [128, 128, 128]
     },
     "6": {
-        "color": [255, 0, 255],
-        "name": "magenta"
+        "name": "pink",
+        "color": [255, 192, 203]
     },
     "7": {
-        "color": [0, 255, 255],
-        "name": "cyan"
+        "name": "orange",
+        "color": [255, 165, 0]
     },
     "8": {
-        "color": [128, 128, 128],
-        "name": "gray"
+        "name": "cyan",
+        "color": [0, 255, 255]
     },
     "9": {
-        "color": [128, 0, 0],
-        "name": "dark red"
+        "name": "brown",
+        "color": [165, 42, 42]
     }
 } 
