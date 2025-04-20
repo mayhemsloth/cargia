@@ -4,11 +4,18 @@ import traceback
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                            QHBoxLayout, QPushButton, QLabel, QFileDialog, 
                            QGridLayout, QGroupBox, QCheckBox, QMessageBox,
-                           QMenuBar, QMenu, QDialog, QLineEdit, QDialogButtonBox)
+                           QMenuBar, QMenu, QDialog, QLineEdit, QDialogButtonBox,
+                           QTextEdit, QScrollArea)
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor, QPalette
 from grid_widget import GridWidget
 from data_manager import DataManager
+import os
+
+def get_repo_root():
+    """Get the absolute path to the cargia directory."""
+    # Get the directory containing this file
+    return os.path.dirname(os.path.abspath(__file__))
 
 def log_error(message, error=None):
     """Helper function to log errors with traceback"""
@@ -20,7 +27,7 @@ def log_error(message, error=None):
     print("-" * 80)
 
 class SettingsDialog(QDialog):
-    def __init__(self, current_data_dir, parent=None):
+    def __init__(self, current_data_dir, current_source_folder, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Settings")
         self.setMinimumWidth(400)
@@ -42,6 +49,21 @@ class SettingsDialog(QDialog):
         data_dir_group.setLayout(data_dir_layout)
         layout.addWidget(data_dir_group)
         
+        # Source folder settings
+        source_folder_group = QGroupBox("Source Folder")
+        source_folder_layout = QHBoxLayout()
+        
+        self.source_folder_edit = QLineEdit(current_source_folder)
+        self.source_folder_edit.setReadOnly(True)
+        source_folder_layout.addWidget(self.source_folder_edit)
+        
+        browse_source_btn = QPushButton("Browse...")
+        browse_source_btn.clicked.connect(self.browse_source_folder)
+        source_folder_layout.addWidget(browse_source_btn)
+        
+        source_folder_group.setLayout(source_folder_layout)
+        layout.addWidget(source_folder_group)
+        
         # Dialog buttons
         button_box = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | 
@@ -62,8 +84,104 @@ class SettingsDialog(QDialog):
         if dir_path:
             self.data_dir_edit.setText(dir_path)
     
+    def browse_source_folder(self):
+        dir_path = QFileDialog.getExistingDirectory(
+            self,
+            "Select Source Folder",
+            self.source_folder_edit.text()
+        )
+        if dir_path:
+            self.source_folder_edit.setText(dir_path)
+    
     def get_data_dir(self):
         return self.data_dir_edit.text()
+    
+    def get_source_folder(self):
+        return self.source_folder_edit.text()
+
+class SetUserDialog(QDialog):
+    def __init__(self, current_user, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Set User")
+        self.setMinimumWidth(300)
+        
+        layout = QVBoxLayout()
+        
+        # User input
+        user_group = QGroupBox("User Name")
+        user_layout = QVBoxLayout()
+        
+        self.user_edit = QLineEdit(current_user)
+        user_layout.addWidget(self.user_edit)
+        
+        user_group.setLayout(user_layout)
+        layout.addWidget(user_group)
+        
+        # Dialog buttons
+        button_box = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | 
+            QDialogButtonBox.StandardButton.Cancel
+        )
+        button_box.accepted.connect(self.accept)
+        button_box.rejected.connect(self.reject)
+        layout.addWidget(button_box)
+        
+        self.setLayout(layout)
+    
+    def get_user(self):
+        return self.user_edit.text().strip()
+
+class PairWidget(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        layout = QVBoxLayout()
+        
+        # Grids container
+        grids_container = QHBoxLayout()
+        grids_container.setSpacing(20)  # Add spacing between input and output grids
+        
+        # Input grid
+        input_group = QGroupBox("Input")
+        input_layout = QVBoxLayout()
+        self.input_grid = GridWidget(3, 3)
+        self.input_grid.setMinimumSize(300, 300)  # Set minimum size for the grid
+        input_layout.addWidget(self.input_grid)
+        input_group.setLayout(input_layout)
+        grids_container.addWidget(input_group)
+        
+        # Output grid
+        output_group = QGroupBox("Output")
+        output_layout = QVBoxLayout()
+        self.output_grid = GridWidget(3, 3)
+        self.output_grid.setMinimumSize(300, 300)  # Set minimum size for the grid
+        output_layout.addWidget(self.output_grid)
+        output_group.setLayout(output_layout)
+        grids_container.addWidget(output_group)
+        
+        layout.addLayout(grids_container)
+        
+        # Thought text box
+        self.thought_text = QTextEdit()
+        self.thought_text.setPlaceholderText("Enter your thoughts about this transformation...")
+        self.thought_text.setMinimumHeight(100)  # Set minimum height for the text box
+        layout.addWidget(self.thought_text)
+        
+        self.setLayout(layout)
+    
+    def set_grid_data(self, input_data, output_data):
+        """Set the grid data for both input and output grids."""
+        rows = len(input_data)
+        cols = len(input_data[0])
+        
+        self.input_grid.resizeGrid(rows, cols)
+        self.output_grid.resizeGrid(rows, cols)
+        
+        self.input_grid.setGridData(input_data)
+        self.output_grid.setGridData(output_data)
+    
+    def get_thought_text(self):
+        """Get the current thought text."""
+        return self.thought_text.toPlainText().strip()
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -72,8 +190,35 @@ class MainWindow(QMainWindow):
             self.setWindowTitle("Cargia - ARC-AGI Labeling Tool")
             self.setMinimumSize(1200, 800)
             
-            # Initialize data manager with default directory
-            self.data_manager = DataManager()
+            # Get cargia directory
+            cargia_dir = get_repo_root()
+            
+            # Load settings
+            settings_path = os.path.join(cargia_dir, "settings.json")
+            if not os.path.exists(settings_path):
+                # Create default settings if they don't exist
+                default_settings = {
+                    "user": "",
+                    "data_dir": os.path.join(cargia_dir, "data"),
+                    "source_folder": os.path.join(cargia_dir, "data", "arc_agi_2_source_data")
+                }
+                with open(settings_path, 'w') as f:
+                    json.dump(default_settings, f, indent=4)
+                settings = default_settings
+            else:
+                with open(settings_path, 'r') as f:
+                    settings = json.load(f)
+            
+            # Ensure data directory exists
+            data_dir = os.path.abspath(settings.get('data_dir', os.path.join(cargia_dir, "data")))
+            source_folder = os.path.abspath(settings.get('source_folder', os.path.join(cargia_dir, "data", "arc_agi_2_source_data")))
+            
+            # Create directories if they don't exist
+            os.makedirs(data_dir, exist_ok=True)
+            os.makedirs(source_folder, exist_ok=True)
+            
+            # Initialize data manager with settings
+            self.data_manager = DataManager(data_dir, source_folder)
             
             # Create menu bar
             self.create_menu_bar()
@@ -81,83 +226,90 @@ class MainWindow(QMainWindow):
             # Create central widget and main layout
             central_widget = QWidget()
             self.setCentralWidget(central_widget)
-            main_layout = QHBoxLayout(central_widget)
+            main_layout = QVBoxLayout(central_widget)
             
-            # Create demonstration examples view
-            demo_view = QGroupBox("Task Demonstration")
-            demo_layout = QVBoxLayout()
+            # Create controls section
+            controls_group = QGroupBox("Controls")
+            controls_layout = QHBoxLayout()  # Changed to horizontal layout for main controls
             
-            # Add input and output grids for training pairs
-            self.input_grid = GridWidget(3, 3)
-            self.output_grid = GridWidget(3, 3)
-            demo_layout.addWidget(QLabel("Input:"))
-            demo_layout.addWidget(self.input_grid)
-            demo_layout.addWidget(QLabel("Output:"))
-            demo_layout.addWidget(self.output_grid)
-            
-            # Add navigation button
-            self.next_pair_btn = QPushButton("Show next train pair")
-            demo_layout.addWidget(self.next_pair_btn)
-            
-            demo_view.setLayout(demo_layout)
-            
-            # Create evaluation view
-            evaluation_view = QGroupBox("Evaluation")
-            evaluation_layout = QVBoxLayout()
-            
-            # Test input section
-            test_input_group = QGroupBox("Test Input")
-            test_input_layout = QVBoxLayout()
-            self.test_input_counter = QLabel("Test input grid 0/0")
-            self.next_test_btn = QPushButton("Next test input")
-            test_input_layout.addWidget(self.test_input_counter)
-            test_input_layout.addWidget(self.next_test_btn)
-            self.test_input_grid = GridWidget(3, 3)
-            test_input_layout.addWidget(self.test_input_grid)
-            test_input_group.setLayout(test_input_layout)
-            
-            # Task controls
-            task_controls = QGroupBox("Task Controls")
+            # Left side: Task controls
             task_controls_layout = QVBoxLayout()
             
-            # File loading controls
-            file_controls = QHBoxLayout()
-            self.load_task_btn = QPushButton("Load Task JSON")
-            file_controls.addWidget(self.load_task_btn)
-            task_controls_layout.addLayout(file_controls)
+            # Task controls row
+            task_row_layout = QHBoxLayout()
+            
+            # New solve button
+            self.new_solve_btn = QPushButton("New Solve")
+            task_row_layout.addWidget(self.new_solve_btn)
+            
+            # Next pair button
+            self.next_pair_btn = QPushButton("Show Next Pair")
+            self.next_pair_btn.setEnabled(False)
+            task_row_layout.addWidget(self.next_pair_btn)
             
             # Task name display
-            self.task_name_label = QLabel("Task name: ")
-            task_controls_layout.addWidget(self.task_name_label)
+            self.task_name_label = QLabel("Task: None")
+            task_row_layout.addWidget(self.task_name_label)
             
-            # Symbol visibility toggle
-            self.show_symbols_check = QCheckBox("Show symbol numbers")
-            task_controls_layout.addWidget(self.show_symbols_check)
+            task_controls_layout.addLayout(task_row_layout)
+            controls_layout.addLayout(task_controls_layout)
             
-            task_controls.setLayout(task_controls_layout)
+            # Add a spacer to push metadata to the right
+            controls_layout.addStretch()
             
-            # Add all components to evaluation layout
-            evaluation_layout.addWidget(test_input_group)
-            evaluation_layout.addWidget(task_controls)
-            evaluation_view.setLayout(evaluation_layout)
+            # Right side: Metadata section
+            metadata_group = QGroupBox("Metadata")
+            metadata_group.setMaximumWidth(200)  # Limit the width of the metadata group
+            metadata_layout = QVBoxLayout()
+            metadata_layout.setSpacing(2)  # Reduce spacing between buttons
             
-            # Add main components to main layout
-            main_layout.addWidget(demo_view, 1)
-            main_layout.addWidget(evaluation_view, 2)
+            # Create toggle buttons for metadata labels
+            self.metadata_buttons = {}
+            metadata_labels = ["Rotational", "Horizontal", "Vertical", "Translation", "Invertable"]
+            for label in metadata_labels:
+                btn = QPushButton(label)
+                btn.setCheckable(True)
+                btn.setEnabled(False)  # Disabled until task is loaded
+                btn.setMaximumWidth(180)  # Limit button width
+                btn.clicked.connect(lambda checked, l=label: self.update_metadata_label(l, checked))
+                self.metadata_buttons[label] = btn
+                metadata_layout.addWidget(btn)
+            
+            metadata_group.setLayout(metadata_layout)
+            controls_layout.addWidget(metadata_group)
+            
+            controls_group.setLayout(controls_layout)
+            main_layout.addWidget(controls_group)
+            
+            # Create scroll area for pairs
+            scroll_area = QScrollArea()
+            scroll_area.setWidgetResizable(True)
+            scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+            scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+            
+            # Create container for pairs
+            self.pairs_container = QWidget()
+            self.pairs_layout = QVBoxLayout(self.pairs_container)
+            self.pairs_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+            self.pairs_layout.setSpacing(20)  # Add some spacing between pairs
+            
+            scroll_area.setWidget(self.pairs_container)
+            main_layout.addWidget(scroll_area)
             
             # Connect signals
-            self.load_task_btn.clicked.connect(self.load_task)
-            self.next_pair_btn.clicked.connect(self.next_pair)
-            self.next_test_btn.clicked.connect(self.next_test_input)
-            self.show_symbols_check.stateChanged.connect(self.toggle_symbol_visibility)
+            self.new_solve_btn.clicked.connect(self.start_new_solve)
+            self.next_pair_btn.clicked.connect(self.show_next_pair)
             
             # Initialize state
             self.current_task = None
+            self.current_task_path = None
             self.current_train_index = 0
-            self.current_test_index = 0
-            self.test_inputs = []
-            self.train_pairs = []
-            self.showing_test = False
+            self.pair_widgets = []
+            self.current_solve_id = None
+            self.metadata_labels = {label: False for label in metadata_labels}
+            
+            # Update window title with current user
+            self.update_window_title()
             
             print("MainWindow initialized successfully")
         except Exception as e:
@@ -171,182 +323,202 @@ class MainWindow(QMainWindow):
         # Settings menu
         settings_menu = menu_bar.addMenu("Settings")
         
+        # Set User action
+        set_user_action = settings_menu.addAction("Set User...")
+        set_user_action.triggered.connect(self.show_set_user_dialog)
+        
+        # Add separator
+        settings_menu.addSeparator()
+        
         # Data directory action
         data_dir_action = settings_menu.addAction("Data Directory...")
         data_dir_action.triggered.connect(self.show_settings_dialog)
     
+    def show_set_user_dialog(self):
+        """Show the set user dialog and update user if changed."""
+        dialog = SetUserDialog(self.data_manager.current_user, self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            new_user = dialog.get_user()
+            if new_user and new_user != self.data_manager.current_user:
+                self.data_manager.set_current_user(new_user)
+                self.update_window_title()
+                QMessageBox.information(
+                    self,
+                    "User Updated",
+                    f"Current user set to: {new_user}"
+                )
+    
+    def update_window_title(self):
+        """Update the window title to include the current user."""
+        user = self.data_manager.current_user
+        if user:
+            self.setWindowTitle(f"Cargia - ARC-AGI Labeling Tool (User: {user})")
+        else:
+            self.setWindowTitle("Cargia - ARC-AGI Labeling Tool")
+    
     def show_settings_dialog(self):
         """Show the settings dialog and update data directory if changed."""
-        dialog = SettingsDialog(self.data_manager.data_dir, self)
+        dialog = SettingsDialog(self.data_manager.data_dir, self.data_manager.source_folder, self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             new_data_dir = dialog.get_data_dir()
-            if new_data_dir != self.data_manager.data_dir:
+            new_source_folder = dialog.get_source_folder()
+            if new_data_dir != self.data_manager.data_dir or new_source_folder != self.data_manager.source_folder:
                 # Reinitialize data manager with new directory
-                self.data_manager = DataManager(new_data_dir)
+                self.data_manager = DataManager(new_data_dir, new_source_folder)
                 QMessageBox.information(
                     self,
                     "Settings Updated",
-                    f"Data directory updated to: {new_data_dir}"
+                    f"Data directory updated to: {new_data_dir}\nSource folder updated to: {new_source_folder}"
                 )
     
-    def load_task(self):
+    def update_metadata_label(self, label, value):
+        """Update a metadata label and save to database."""
         try:
-            file_name, _ = QFileDialog.getOpenFileName(
-                self,
-                "Load Task JSON",
-                "",
-                "JSON Files (*.json)"
+            self.metadata_labels[label] = value
+            if self.current_solve_id is not None:
+                self.data_manager.update_metadata_labels(self.current_solve_id, self.metadata_labels)
+        except Exception as e:
+            log_error(f"Failed to update metadata label: {label}", e)
+            QMessageBox.critical(self, "Error", f"Failed to update metadata label: {str(e)}")
+    
+    def enable_metadata_buttons(self, enabled):
+        """Enable or disable all metadata buttons."""
+        for btn in self.metadata_buttons.values():
+            btn.setEnabled(enabled)
+            if not enabled:
+                btn.setChecked(False)
+    
+    def start_new_solve(self):
+        """Start a new solve by finding the next unsolved task."""
+        try:
+            # Get next task with unique order map
+            next_task = self.data_manager.get_next_task()
+            if next_task is None:
+                QMessageBox.information(
+                    self,
+                    "No Tasks Available",
+                    "No unsolved tasks found. All tasks have been completed by the current user."
+                )
+                return
+            
+            # Create solve entry
+            self.current_solve_id = self.data_manager.create_solve(
+                task_id=next_task["task_id"],
+                order_map=next_task["order_map"],
+                order_map_type="default",
+                color_map={},  # TODO: Add color mapping
+                metadata_labels=self.metadata_labels
             )
-            if file_name:
-                print(f"\nLoading task from: {file_name}")
-                with open(file_name, 'r') as f:
-                    self.current_task = json.load(f)
-                    print(f"Task loaded successfully: {self.current_task.get('name', 'Unnamed Task')}")
+            
+            # Load the task
+            self.current_task = next_task["task_data"]
+            self.current_task_path = os.path.join(
+                self.data_manager.source_folder,
+                "training",
+                f"{next_task['task_id']}.json"
+            )
+            
+            # Clear existing pairs
+            for widget in self.pair_widgets:
+                widget.deleteLater()
+            self.pair_widgets.clear()
+            
+            # Update task name
+            self.task_name_label.setText(f"Task: {next_task['task_id']}")
+            
+            # Enable metadata buttons
+            self.enable_metadata_buttons(True)
+            
+            # Create first pair widget
+            if 'train' in self.current_task and self.current_task['train']:
+                self.current_train_index = 0
+                self.add_pair_widget()
+                self.next_pair_btn.setEnabled(True)
+            
+        except Exception as e:
+            log_error("Failed to start new solve", e)
+            QMessageBox.critical(self, "Error", f"Failed to start new solve: {str(e)}")
+    
+    def load_task(self, task_path):
+        """Load a task from the specified path."""
+        try:
+            with open(task_path, 'r') as f:
+                self.current_task = json.load(f)
+                self.current_task_path = task_path
+                
+                # Clear existing pairs
+                for widget in self.pair_widgets:
+                    widget.deleteLater()
+                self.pair_widgets.clear()
+                
+                # Update task name
+                task_id = os.path.basename(task_path)[:-5]  # Remove .json extension
+                self.task_name_label.setText(f"Task: {task_id}")
+                
+                # Create first pair widget
+                if 'train' in self.current_task and self.current_task['train']:
+                    self.current_train_index = 0
+                    self.add_pair_widget()
+                    self.next_pair_btn.setEnabled(True)
                     
-                    # Load training pairs
-                    if 'train' in self.current_task:
-                        self.train_pairs = self.current_task['train']
-                        print(f"Found {len(self.train_pairs)} training pairs")
-                        self.current_train_index = 0
-                        self.showing_test = False
-                        self.update_train_display()
-                        
-                    # Load test inputs
-                    if 'test' in self.current_task:
-                        self.test_inputs = [test['input'] for test in self.current_task['test']]
-                        print(f"Found {len(self.test_inputs)} test inputs")
-                        self.current_test_index = 0
-                        self.update_test_display()
-        except json.JSONDecodeError as e:
-            log_error("Failed to parse JSON file", e)
-            QMessageBox.critical(self, "Error", f"Failed to parse JSON file: {str(e)}")
+                    # Create solve entry
+                    self.current_solve_id = self.data_manager.create_solve(
+                        task_id=task_id,
+                        order_map={"train": [], "test": []},  # Will be updated as pairs are shown
+                        color_map={},  # TODO: Add color mapping
+                        metadata_labels={}  # TODO: Add metadata labels
+                    )
         except Exception as e:
             log_error("Failed to load task", e)
             QMessageBox.critical(self, "Error", f"Failed to load task: {str(e)}")
     
-    def update_train_display(self):
+    def add_pair_widget(self):
+        """Add a new pair widget to the layout at the top."""
+        pair_widget = PairWidget()
+        self.pairs_layout.insertWidget(0, pair_widget)  # Insert at the top
+        self.pair_widgets.insert(0, pair_widget)  # Keep track of widgets in the same order
+        
+        # Set grid data for the new pair
+        if self.current_train_index < len(self.current_task['train']):
+            pair = self.current_task['train'][self.current_train_index]
+            pair_widget.set_grid_data(pair['input'], pair['output'])
+            
+            # Ensure the new pair is visible by scrolling to the top
+            self.centralWidget().findChild(QScrollArea).ensureWidgetVisible(pair_widget)
+    
+    def show_next_pair(self):
+        """Show the next pair in the current task."""
         try:
-            if not self.train_pairs:
-                print("No training pairs available")
-                return
-                
-            if self.current_train_index >= len(self.train_pairs):
-                print(f"Invalid train index: {self.current_train_index} (max: {len(self.train_pairs)-1})")
-                return
-                
-            pair = self.train_pairs[self.current_train_index]
-            print(f"\nUpdating train display for pair {self.current_train_index + 1}/{len(self.train_pairs)}")
+            # Save current thought
+            if self.pair_widgets:
+                current_widget = self.pair_widgets[-1]
+                thought_text = current_widget.get_thought_text()
+                if thought_text:
+                    self.data_manager.add_thought(
+                        solve_id=self.current_solve_id,
+                        pair_label=chr(97 + self.current_train_index),  # 'a', 'b', 'c', etc.
+                        pair_type="train",
+                        sequence_index=self.current_train_index,
+                        thought_text=thought_text
+                    )
             
-            if not pair or 'input' not in pair or 'output' not in pair:
-                print("Invalid pair structure")
-                return
-                
-            # Validate grid dimensions
-            input_grid = pair['input']
-            output_grid = pair['output']
+            # Move to next pair
+            self.current_train_index += 1
             
-            if not input_grid or not output_grid:
-                print("Empty input or output grid")
-                return
-                
-            if not isinstance(input_grid, list) or not isinstance(output_grid, list):
-                print("Invalid grid type")
-                return
-                
-            if not input_grid[0] or not output_grid[0]:
-                print("Empty grid row")
-                return
-                
-            # Resize grids to match the input/output dimensions
-            rows = len(input_grid)
-            cols = len(input_grid[0])
-            print(f"Grid dimensions: {rows}x{cols}")
-            
-            self.input_grid.resizeGrid(rows, cols)
-            self.output_grid.resizeGrid(rows, cols)
-            
-            # Set the grid data
-            self.input_grid.setGridData(input_grid)
-            self.output_grid.setGridData(output_grid)
-            
-            # Update button text
-            if self.current_train_index < len(self.train_pairs) - 1:
-                self.next_pair_btn.setText("Show next train pair")
+            if self.current_train_index < len(self.current_task['train']):
+                self.add_pair_widget()
             else:
-                self.next_pair_btn.setText("Show TEST input")
-                
-            print("Train display updated successfully")
+                # No more pairs, complete the solve
+                self.next_pair_btn.setEnabled(False)
+                self.data_manager.complete_solve(self.current_solve_id)
+                QMessageBox.information(
+                    self,
+                    "Solve Complete",
+                    "All pairs have been shown. The solve has been saved."
+                )
         except Exception as e:
-            log_error("Failed to update train display", e)
-    
-    def update_test_display(self):
-        try:
-            if not self.test_inputs:
-                print("No test inputs available")
-                return
-                
-            if self.current_test_index >= len(self.test_inputs):
-                print(f"Invalid test index: {self.current_test_index} (max: {len(self.test_inputs)-1})")
-                return
-                
-            print(f"\nUpdating test display for input {self.current_test_index + 1}/{len(self.test_inputs)}")
-            
-            self.test_input_counter.setText(
-                f"Test input grid {self.current_test_index + 1}/{len(self.test_inputs)}"
-            )
-            
-            # Resize grid to match test input dimensions
-            test_input = self.test_inputs[self.current_test_index]
-            
-            if not test_input or not isinstance(test_input, list) or not test_input[0]:
-                print("Invalid test input")
-                return
-                
-            rows = len(test_input)
-            cols = len(test_input[0])
-            print(f"Test grid dimensions: {rows}x{cols}")
-            
-            self.test_input_grid.resizeGrid(rows, cols)
-            self.test_input_grid.setGridData(test_input)
-            
-            print("Test display updated successfully")
-        except Exception as e:
-            log_error("Failed to update test display", e)
-    
-    def next_pair(self):
-        try:
-            if not self.showing_test:
-                if self.current_train_index < len(self.train_pairs) - 1:
-                    self.current_train_index += 1
-                    print(f"\nMoving to next train pair: {self.current_train_index + 1}")
-                    self.update_train_display()
-                else:
-                    # Switch to showing test inputs
-                    print("\nSwitching to test inputs")
-                    self.showing_test = True
-                    self.current_test_index = 0
-                    self.update_test_display()
-                    self.next_pair_btn.setText("Show next test input")
-            else:
-                if self.test_inputs:
-                    self.current_test_index = (self.current_test_index + 1) % len(self.test_inputs)
-                    print(f"\nMoving to next test input: {self.current_test_index + 1}")
-                    self.update_test_display()
-        except Exception as e:
-            log_error("Failed to handle next pair", e)
-    
-    def next_test_input(self):
-        try:
-            if self.test_inputs:
-                self.current_test_index = (self.current_test_index + 1) % len(self.test_inputs)
-                print(f"\nMoving to next test input: {self.current_test_index + 1}")
-                self.update_test_display()
-        except Exception as e:
-            log_error("Failed to handle next test input", e)
-    
-    def toggle_symbol_visibility(self, state):
-        # TODO: Implement symbol visibility toggle
-        pass
+            log_error("Failed to show next pair", e)
+            QMessageBox.critical(self, "Error", f"Failed to show next pair: {str(e)}")
 
 def main():
     try:

@@ -73,8 +73,8 @@ class GridWidget(QWidget):
                     print("Failed to convert grid to image")
                     return
                     
-                # Save debug image only when generating new image and debug flag is True
-                if self._save_debug_images:
+                # Save debug image only when generating new image, debug flag is True, and we have actual data
+                if self._save_debug_images and any(any(cell != 0 for cell in row) for row in self.grid_data):
                     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
                     debug_path = os.path.join("debug_images", f"grid_{timestamp}.png")
                     self._cached_pil_image.save(debug_path)
