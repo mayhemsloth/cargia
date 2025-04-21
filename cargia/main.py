@@ -11,6 +11,7 @@ from PyQt6.QtGui import QColor, QPalette
 from grid_widget import GridWidget
 from data_manager import DataManager
 import os
+from transcription import TranscriptionManager
 
 def get_repo_root():
     """Get the absolute path to the cargia directory."""
@@ -162,13 +163,13 @@ class PairWidget(QWidget):
         
         # Thought text box
         self.thought_text = QTextEdit()
-        self.thought_text.setPlaceholderText("Enter your thoughts about this transformation...")
-        self.thought_text.setMinimumHeight(100)  # Set minimum height for the text box
+        self.thought_text.setPlaceholderText("Enter your thoughts about this transformation... (Transcription will appear here when active)")
+        self.thought_text.setMinimumHeight(100)
         layout.addWidget(self.thought_text)
         
         self.setLayout(layout)
     
-    def set_grid_data(self, input_data, output_data):
+    def set_grid_data(self, input_data, output_data, is_test=False):
         """Set the grid data for both input and output grids."""
         rows = len(input_data)
         cols = len(input_data[0])
@@ -178,6 +179,14 @@ class PairWidget(QWidget):
         
         self.input_grid.setGridData(input_data)
         self.output_grid.setGridData(output_data)
+        
+        # Set different background color only for test pairs
+        if is_test:
+            self.thought_text.setStyleSheet("background-color:rgb(144, 42, 16);")  # Using a more noticeable light red
+            self.thought_text.setPlaceholderText("Enter your thoughts about this test transformation...")
+        else:
+            self.thought_text.setStyleSheet("")  # Reset to default system style
+            self.thought_text.setPlaceholderText("Enter your thoughts about this transformation...")
     
     def get_thought_text(self):
         """Get the current thought text."""
@@ -220,6 +229,9 @@ class MainWindow(QMainWindow):
             # Initialize data manager with settings
             self.data_manager = DataManager(data_dir, source_folder)
             
+            # Initialize transcription manager
+            self.transcription_manager = TranscriptionManager(settings_path)
+            
             # Create menu bar
             self.create_menu_bar()
             
@@ -230,7 +242,7 @@ class MainWindow(QMainWindow):
             
             # Create controls section
             controls_group = QGroupBox("Controls")
-            controls_layout = QHBoxLayout()  # Changed to horizontal layout for main controls
+            controls_layout = QHBoxLayout()
             
             # Left side: Task controls
             task_controls_layout = QVBoxLayout()
@@ -250,6 +262,17 @@ class MainWindow(QMainWindow):
             # Task name display
             self.task_name_label = QLabel("Task: None")
             task_row_layout.addWidget(self.task_name_label)
+            
+            # Add transcription toggle button
+            self.transcription_toggle = QPushButton("Start Transcription")
+            self.transcription_toggle.setCheckable(True)
+            self.transcription_toggle.setEnabled(self.transcription_manager.is_initialized())
+            self.transcription_toggle.clicked.connect(self.toggle_transcription)
+            task_row_layout.addWidget(self.transcription_toggle)
+            
+            # Add transcription status indicator
+            self.transcription_status = QLabel("Transcription: Off")
+            task_row_layout.addWidget(self.transcription_status)
             
             task_controls_layout.addLayout(task_row_layout)
             controls_layout.addLayout(task_controls_layout)
@@ -304,9 +327,11 @@ class MainWindow(QMainWindow):
             self.current_task = None
             self.current_task_path = None
             self.current_train_index = 0
+            self.current_test_index = 0
             self.pair_widgets = []
             self.current_solve_id = None
             self.metadata_labels = {label: False for label in metadata_labels}
+            self.showing_test_pairs = False  # Track whether we're showing test pairs
             
             # Update window title with current user
             self.update_window_title()
@@ -429,9 +454,13 @@ class MainWindow(QMainWindow):
             # Enable metadata buttons
             self.enable_metadata_buttons(True)
             
+            # Reset state
+            self.current_train_index = 0
+            self.current_test_index = 0
+            self.showing_test_pairs = False
+            
             # Create first pair widget
             if 'train' in self.current_task and self.current_task['train']:
-                self.current_train_index = 0
                 self.add_pair_widget()
                 self.next_pair_btn.setEnabled(True)
             
@@ -479,12 +508,19 @@ class MainWindow(QMainWindow):
         self.pair_widgets.insert(0, pair_widget)  # Keep track of widgets in the same order
         
         # Set grid data for the new pair
-        if self.current_train_index < len(self.current_task['train']):
-            pair = self.current_task['train'][self.current_train_index]
-            pair_widget.set_grid_data(pair['input'], pair['output'])
-            
-            # Ensure the new pair is visible by scrolling to the top
-            self.centralWidget().findChild(QScrollArea).ensureWidgetVisible(pair_widget)
+        if not self.showing_test_pairs:
+            # Show training pair
+            if self.current_train_index < len(self.current_task['train']):
+                pair = self.current_task['train'][self.current_train_index]
+                pair_widget.set_grid_data(pair['input'], pair['output'], is_test=False)
+        else:
+            # Show test pair
+            if self.current_test_index < len(self.current_task['test']):
+                pair = self.current_task['test'][self.current_test_index]
+                pair_widget.set_grid_data(pair['input'], pair['output'], is_test=True)
+        
+        # Ensure the new pair is visible by scrolling to the top
+        self.centralWidget().findChild(QScrollArea).ensureWidgetVisible(pair_widget)
     
     def show_next_pair(self):
         """Show the next pair in the current task."""
@@ -494,31 +530,100 @@ class MainWindow(QMainWindow):
                 current_widget = self.pair_widgets[-1]
                 thought_text = current_widget.get_thought_text()
                 if thought_text:
+                    pair_type = "test" if self.showing_test_pairs else "train"
+                    sequence_index = self.current_test_index if self.showing_test_pairs else self.current_train_index
                     self.data_manager.add_thought(
                         solve_id=self.current_solve_id,
-                        pair_label=chr(97 + self.current_train_index),  # 'a', 'b', 'c', etc.
-                        pair_type="train",
-                        sequence_index=self.current_train_index,
+                        pair_label=chr(97 + sequence_index),  # 'a', 'b', 'c', etc.
+                        pair_type=pair_type,
+                        sequence_index=sequence_index,
                         thought_text=thought_text
                     )
             
-            # Move to next pair
-            self.current_train_index += 1
-            
-            if self.current_train_index < len(self.current_task['train']):
-                self.add_pair_widget()
+            if not self.showing_test_pairs:
+                # Move to next training pair
+                self.current_train_index += 1
+                
+                if self.current_train_index < len(self.current_task['train']):
+                    self.add_pair_widget()
+                else:
+                    # Switch to test pairs
+                    self.showing_test_pairs = True
+                    self.current_test_index = 0
+                    if self.current_task.get('test') and len(self.current_task['test']) > 0:
+                        self.add_pair_widget()
+                    else:
+                        # No test pairs, complete the solve
+                        self.next_pair_btn.setEnabled(False)
+                        self.data_manager.complete_solve(self.current_solve_id)
+                        QMessageBox.information(
+                            self,
+                            "Solve Complete",
+                            "All pairs have been shown. The solve has been saved."
+                        )
             else:
-                # No more pairs, complete the solve
-                self.next_pair_btn.setEnabled(False)
-                self.data_manager.complete_solve(self.current_solve_id)
-                QMessageBox.information(
-                    self,
-                    "Solve Complete",
-                    "All pairs have been shown. The solve has been saved."
-                )
+                # Move to next test pair
+                self.current_test_index += 1
+                
+                if self.current_test_index < len(self.current_task['test']):
+                    self.add_pair_widget()
+                else:
+                    # No more pairs, complete the solve
+                    self.next_pair_btn.setEnabled(False)
+                    self.data_manager.complete_solve(self.current_solve_id)
+                    QMessageBox.information(
+                        self,
+                        "Solve Complete",
+                        "All pairs have been shown. The solve has been saved."
+                    )
         except Exception as e:
             log_error("Failed to show next pair", e)
             QMessageBox.critical(self, "Error", f"Failed to show next pair: {str(e)}")
+    
+    def toggle_transcription(self, checked: bool):
+        """Toggle transcription on/off."""
+        if checked:
+            # Start transcription with callback to current pair
+            success = self.transcription_manager.start_transcription(
+                callback=self.handle_transcribed_text
+            )
+            if success:
+                self.transcription_toggle.setText("Stop Transcription")
+                self.transcription_status.setText("Transcription: Active 🎤")
+                self.transcription_status.setStyleSheet("color: green")
+            else:
+                self.transcription_toggle.setChecked(False)
+        else:
+            # Stop transcription
+            self.transcription_manager.stop_transcription()
+            self.transcription_toggle.setText("Start Transcription")
+            self.transcription_status.setText("Transcription: Off")
+            self.transcription_status.setStyleSheet("")
+    
+    def handle_transcribed_text(self, text: str):
+        """Handle transcribed text by adding it to the current pair's thought text."""
+        if self.pair_widgets:
+            current_pair = self.pair_widgets[0]  # Get the topmost pair
+            current_text = current_pair.thought_text.toPlainText()
+            
+            # Add new text with proper spacing
+            if current_text and not current_text.endswith((" ", "\n")):
+                current_text += " "
+            current_text += text
+            
+            # Update the text box
+            current_pair.thought_text.setPlainText(current_text)
+            
+            # Move cursor to end
+            cursor = current_pair.thought_text.textCursor()
+            cursor.movePosition(cursor.End)
+            current_pair.thought_text.setTextCursor(cursor)
+    
+    def cleanup(self):
+        """Clean up resources before closing."""
+        if hasattr(self, 'transcription_manager'):
+            self.transcription_manager.stop_transcription()
+            self.transcription_manager.cleanup()
 
 def main():
     try:
