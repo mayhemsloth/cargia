@@ -5,10 +5,11 @@
     "order_map_type": "default",
     "transcription": {
         "load_at_startup": true,
-        "model_path": "large-v3",
+        "model_path": "large-v3-turbo",
         "device": "cuda",
         "compute_type": "float16",
         "beam_size": 5,
-        "language": "en"
+        "language": "en",
+        "audio_device": 43
     }
 }

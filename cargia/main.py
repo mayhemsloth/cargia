@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                            QMenuBar, QMenu, QDialog, QLineEdit, QDialogButtonBox,
                            QTextEdit, QScrollArea)
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QColor, QPalette
+from PyQt6.QtGui import QColor, QPalette, QTextCursor
 from grid_widget import GridWidget
 from data_manager import DataManager
 import os
@@ -229,8 +229,9 @@ class MainWindow(QMainWindow):
             # Initialize data manager with settings
             self.data_manager = DataManager(data_dir, source_folder)
             
-            # Initialize transcription manager
+            # Initialize transcription manager and model
             self.transcription_manager = TranscriptionManager(settings_path)
+            self.transcription_manager.initialize_model()
             
             # Create menu bar
             self.create_menu_bar()
@@ -266,7 +267,7 @@ class MainWindow(QMainWindow):
             # Add transcription toggle button
             self.transcription_toggle = QPushButton("Start Transcription")
             self.transcription_toggle.setCheckable(True)
-            self.transcription_toggle.setEnabled(self.transcription_manager.is_initialized())
+            self.transcription_toggle.setEnabled(True)
             self.transcription_toggle.clicked.connect(self.toggle_transcription)
             task_row_layout.addWidget(self.transcription_toggle)
             
@@ -614,9 +615,9 @@ class MainWindow(QMainWindow):
             # Update the text box
             current_pair.thought_text.setPlainText(current_text)
             
-            # Move cursor to end
+            # Move cursor to the very end
             cursor = current_pair.thought_text.textCursor()
-            cursor.movePosition(cursor.End)
+            cursor.movePosition(QTextCursor.MoveOperation.End)
             current_pair.thought_text.setTextCursor(cursor)
     
     def cleanup(self):

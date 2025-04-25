@@ -9,6 +9,16 @@ from huggingface_hub import snapshot_download
 import queue
 import threading
 import time
+import io
+import wave
+from PyQt6.QtCore import QTimer
+import functools
+
+
+SAMPLE_RATE = 16000
+CHUNK_DURATION = 3
+CHUNK_SIZE = int(SAMPLE_RATE * CHUNK_DURATION)
+
 
 class TranscriptionManager:
     def __init__(self, settings_path: str = "settings.json"):
@@ -20,11 +30,13 @@ class TranscriptionManager:
         
         # Add audio recording attributes
         self.audio_queue = queue.Queue()
+        self.audio_device = self.settings.get("audio_device", 43)
         self.is_recording = False
         self.recording_thread: Optional[threading.Thread] = None
         self.transcription_callback: Optional[Callable[[str], None]] = None
         self._model_lock = threading.Lock()  # Add thread lock for model access
-        
+        self._chunk_counter = 0
+
         if self.settings.get("load_at_startup", False):
             self.initialize_model()
     
@@ -91,126 +103,79 @@ class TranscriptionManager:
     def audio_callback(self, indata, frames, time, status):
         """Callback for audio input."""
         if status:
-            print(f"Audio callback status: {status}")
+            print(f"⚠️ Audio status: {status}")
         if self.is_recording:
             self.audio_queue.put(indata.copy())
+            self._chunk_counter += 1
+            if self._chunk_counter % 20 == 0:
+                print(f"  → received {self._chunk_counter} chunks")
     
-    def _transcription_loop(self):
-        """Main loop for audio recording and transcription."""
-        try:
-            audio_settings = self.get_audio_settings()
-            with sd.InputStream(
-                channels=audio_settings["channels"],
-                samplerate=audio_settings["sample_rate"],
-                dtype=audio_settings["dtype"],
-                callback=self.audio_callback,
-                blocksize=int(audio_settings["sample_rate"] * audio_settings["chunk_ms"] / 1000)
-            ):
-                print("🎤 Started recording...")
-                while self.is_recording:
-                    # Check if model is still initialized
-                    if not self.is_initialized():
-                        print("❌ Model not initialized, stopping transcription")
-                        break
-                    
-                    # Collect audio chunks for 2 seconds
-                    audio_chunks = []
-                    timeout_counter = 0
-                    chunk_duration = audio_settings["chunk_ms"] / 1000
-                    max_chunks = int(2.0 / chunk_duration)
-                    
-                    while len(audio_chunks) < max_chunks and self.is_recording:
-                        try:
-                            chunk = self.audio_queue.get(timeout=0.1)
-                            audio_chunks.append(chunk)
-                            timeout_counter = 0
-                        except queue.Empty:
-                            timeout_counter += 1
-                            if timeout_counter > 10:  # 1 second of silence
-                                break
-                    
-                    if audio_chunks and self.is_recording:
-                        # Convert chunks to numpy array
-                        audio = np.concatenate(audio_chunks)
-                        
-                        # Safely access the model with lock
-                        with self._model_lock:
-                            if self.model is not None:
-                                try:
-                                    segments, _ = self.model.transcribe(
-                                        audio,
-                                        language=self.settings.get("language", "en"),
-                                        beam_size=self.settings.get("beam_size", 5)
-                                    )
-                                    
-                                    # Send transcribed text through callback
-                                    text = " ".join(segment.text for segment in segments)
-                                    if text.strip() and self.transcription_callback:
-                                        self.transcription_callback(text.strip())
-                                except Exception as e:
-                                    print(f"Error during transcription: {e}")
-                                    traceback.print_exc()
-                            else:
-                                print("❌ Model not available for transcription")
-                                break
-                
-                print("🛑 Stopped recording")
-        
-        except Exception as e:
-            print(f"Error in transcription loop: {e}")
-            traceback.print_exc()
-        finally:
-            self.is_recording = False
+    def _record_audio(self):
+        """Continuously read from the default mic into audio_queue."""
+        def _cb(indata, frames, t, status):
+            if status:
+                print(f"Audio status: {status}")
+            self.audio_queue.put(indata.copy())
+
+        with sd.InputStream(samplerate=SAMPLE_RATE, channels=1, dtype="int16", callback=_cb):
+            while self.is_recording:
+                time.sleep(0.1)
+
+    def _transcribe_loop(self):
+        """Transciption loop"""
+        model = self.model  # already initialized
+        buffer = np.zeros((0,), dtype=np.int16)
+        print("Transcriber started without overlap")
+        while self.is_recording:
+            # 1) Fill up 3 s
+            while buffer.shape[0] < CHUNK_SIZE and self.is_recording:
+                buffer = np.concatenate((buffer, np.squeeze(self.audio_queue.get())))
+            if not self.is_recording:
+                break
+            # 2) Slice off exactly one chunk
+            audio_chunk = buffer[:CHUNK_SIZE]
+            buffer = buffer[CHUNK_SIZE:]
+            # 3) Normalize and call whisper
+            audio_float = audio_chunk.astype(np.float32) / 32768.0
+            segments, _ = model.transcribe(
+                audio_float,
+                beam_size=self.settings.get("beam_size", 5),
+                language=self.settings.get("language", "en"),
+                vad_filter=True
+            )
+            for seg in segments:
+                text = seg.text.strip()
+                if text and self.transcription_callback:
+                    QTimer.singleShot(
+                        0,
+                        functools.partial(self.transcription_callback, text + " ")
+                    )
     
     def start_transcription(self, callback: Callable[[str], None]) -> bool:
-        """Start recording and transcribing audio."""
-        # Verify model is initialized first
-        if not self.is_initialized():
-            print("Cannot start transcription: Model not initialized")
+        if not self.initialize_model():
             return False
-        
+
         if self.is_recording:
-            print("Transcription already running")
             return True
-        
-        # Set up for new transcription session
+
         self.transcription_callback = callback
         self.is_recording = True
-        self.audio_queue.queue.clear()  # Clear any old audio data
-        
-        # Start recording thread
-        self.recording_thread = threading.Thread(target=self._transcription_loop)
-        self.recording_thread.daemon = True
-        self.recording_thread.start()
-        
-        # Give the thread a moment to start and verify it's running
-        time.sleep(0.5)
-        if not self.recording_thread.is_alive():
-            print("Failed to start recording thread")
-            self.is_recording = False
-            return False
-        
+        # clear any old audio
+        with self.audio_queue.mutex:
+            self.audio_queue.queue.clear()
+
+        # spawn both threads
+        threading.Thread(target=self._record_audio, daemon=True).start()
+        threading.Thread(target=self._transcribe_loop, daemon=True).start()
+
         return True
     
     def stop_transcription(self):
-        """Stop recording and transcribing audio."""
         self.is_recording = False
-        if self.recording_thread:
-            try:
-                self.recording_thread.join(timeout=2.0)  # Wait up to 2 seconds
-                if self.recording_thread.is_alive():
-                    print("Warning: Recording thread did not stop cleanly")
-            except Exception as e:
-                print(f"Error stopping recording thread: {e}")
-            self.recording_thread = None
-        
         self.transcription_callback = None
-        # Clear any remaining audio
-        while not self.audio_queue.empty():
-            try:
-                self.audio_queue.get_nowait()
-            except queue.Empty:
-                break
+        # drain queue
+        with self.audio_queue.mutex:
+            self.audio_queue.queue.clear()
     
     def cleanup(self) -> None:
         """Clean up resources used by the transcription model."""
