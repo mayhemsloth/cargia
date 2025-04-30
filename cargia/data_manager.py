@@ -1,4 +1,3 @@
-import pandas as pd
 import json
 import os
 from datetime import datetime
@@ -6,6 +5,7 @@ from typing import Dict, List, Optional, Union, Any
 import uuid
 import sqlite3
 import traceback
+import random
 
 def get_repo_root():
     """Get the absolute path to the cargia directory."""
@@ -154,7 +154,7 @@ class DataManager:
                 if not os.path.exists(task_path):
                     continue
                 
-                # Load task data to generate order map
+                # Load task data
                 with open(task_path, 'r') as f:
                     task_data = json.load(f)
                 
@@ -171,9 +171,14 @@ class DataManager:
                     """, (task_id, self.current_user, json.dumps(order_map)))
                     if cursor.fetchone() is None:
                         # Found a unique task+order combination
+                        # Reformat task data to match expected structure
+                        reformatted_task = {
+                            'train': [task_data['pairs'][key] for key in order_map['train']],
+                            'test': [task_data['pairs'][key] for key in order_map['test']]
+                        }
                         return {
                             "task_id": task_id,
-                            "task_data": task_data,
+                            "task_data": reformatted_task,
                             "order_map": order_map
                         }
                 finally:
@@ -407,23 +412,29 @@ class DataManager:
         self.save_settings()
     
     def _generate_order_map(self, task_data: Dict) -> Dict[str, List[str]]:
-        """Generate an order map based on the current order_map_type setting."""
-        if 'train' not in task_data:
-            return {"train": [], "test": []}
-        
-        train_pairs = task_data['train']
-        num_pairs = len(train_pairs)
-        
-        if self.order_map_type == 'default':
-            # Default order is just a, b, c, etc.
-            order = [chr(97 + i) for i in range(num_pairs)]  # 97 is ASCII for 'a'
-        else:  # random
-            # Generate random order
-            order = [chr(97 + i) for i in range(num_pairs)]
-            import random
-            random.shuffle(order)
-        
-        return {"train": order, "test": []}  # For now, we only handle training pairs 
+        """Generate order map based on settings."""
+        try:
+            if  self.order_map_type == 'default':
+                # Use the default splits from the task
+                return task_data['default_splits']
+            else:  # 'random'
+                # Get all available pair keys
+                pair_keys = list(task_data['pairs'].keys())
+                # Get the number of train/test pairs from default splits
+                num_train = len(task_data['default_splits']['train'])
+                num_test = len(task_data['default_splits']['test'])
+                
+                # Randomly shuffle the pair keys
+                random.shuffle(pair_keys)
+                
+                # Split into train and test maintaining the same counts
+                return {
+                    'train': pair_keys[:num_train],
+                    'test': pair_keys[num_train:num_train + num_test]
+                }
+        except Exception as e:
+            log_error("Failed to generate order map", e)
+            return {'train': [], 'test': []}
     
     def update_metadata_labels(self, solve_id: int, metadata_labels: Dict[str, bool]):
         """Update the metadata labels for a solve."""

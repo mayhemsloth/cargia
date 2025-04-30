@@ -1,5 +1,5 @@
 ---
-description: This rule is to help in the initial process of creating the Cargia GUI. 
+description: This rule is to help in the initial process of creating the Cargia GUI.
 globs: 
 alwaysApply: false
 ---
@@ -62,6 +62,4 @@ Here’s the rough build plan for the Cargia application.
 -- Vertical flip invariance (all the puzzles’ interiors can be flipped vertically and it wouldn’t affect deriving the correct transformation rule). 
 -- Translation invariance (all the puzzles’ interiors can be translated some random amount (up to the edge) and it wouldn’t affect deriving the correct transformation rule)
 -- World style (the puzzles heavily rely on “objects” being created with colors, and then also a background “medium” color in which those “objects” exist and move in.)
-
-3. Integrate a locally running transcription model that can help me to more quickly move my thoughts into structured text input via the GUI and the different sections. Perhaps have this be a persistent “always on” toggleable thing, and then have it only actually activate and populate when my cursor is in an applicable text box, or something like that? I’m not sure how I should design it. 
 

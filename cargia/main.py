@@ -5,9 +5,9 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                            QHBoxLayout, QPushButton, QLabel, QFileDialog, 
                            QGridLayout, QGroupBox, QCheckBox, QMessageBox,
                            QMenuBar, QMenu, QDialog, QLineEdit, QDialogButtonBox,
-                           QTextEdit, QScrollArea)
+                           QTextEdit, QScrollArea, QFrame, QSizePolicy)
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QColor, QPalette, QTextCursor
+from PyQt6.QtGui import QColor, QPalette, QTextCursor, QFont, QAction
 from grid_widget import GridWidget
 from data_manager import DataManager
 import os
@@ -192,6 +192,21 @@ class PairWidget(QWidget):
         """Get the current thought text."""
         return self.thought_text.toPlainText().strip()
 
+class ColorSwatch(QFrame):
+    def __init__(self, color, name, number, parent=None):
+        super().__init__(parent)
+        self.setFixedSize(30, 30)
+        self.setFrameStyle(QFrame.Shape.Box | QFrame.Shadow.Plain)
+        
+        # Set background color
+        palette = self.palette()
+        palette.setColor(QPalette.ColorRole.Window, QColor(*color))
+        self.setPalette(palette)
+        self.setAutoFillBackground(True)
+        
+        # Create tooltip with name and number
+        self.setToolTip(f"{name} ({number})")
+
 class MainWindow(QMainWindow):
     def __init__(self):
         try:
@@ -243,6 +258,7 @@ class MainWindow(QMainWindow):
             
             # Create controls section
             controls_group = QGroupBox("Controls")
+            controls_group.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
             controls_layout = QHBoxLayout()
             
             # Left side: Task controls
@@ -251,12 +267,21 @@ class MainWindow(QMainWindow):
             # Task controls row
             task_row_layout = QHBoxLayout()
             
+            # Create larger buttons
+            button_height = 50  # Make buttons taller
+            
             # New solve button
             self.new_solve_btn = QPushButton("New Solve")
+            self.new_solve_btn.setMinimumHeight(button_height)
+            self.new_solve_btn.setMinimumWidth(150)  # Make buttons wider
+            self.new_solve_btn.setFont(QFont('Arial', 12, QFont.Weight.Bold))  # Larger, bold font
             task_row_layout.addWidget(self.new_solve_btn)
             
             # Next pair button
             self.next_pair_btn = QPushButton("Show Next Pair")
+            self.next_pair_btn.setMinimumHeight(button_height)
+            self.next_pair_btn.setMinimumWidth(150)
+            self.next_pair_btn.setFont(QFont('Arial', 12, QFont.Weight.Bold))
             self.next_pair_btn.setEnabled(False)
             task_row_layout.addWidget(self.next_pair_btn)
             
@@ -278,14 +303,49 @@ class MainWindow(QMainWindow):
             task_controls_layout.addLayout(task_row_layout)
             controls_layout.addLayout(task_controls_layout)
             
-            # Add a spacer to push metadata to the right
+            # Add a spacer to push right-side elements to the right
             controls_layout.addStretch()
             
-            # Right side: Metadata section
+            # Color map display in a grid
+            color_map_group = QGroupBox("Color Map Reference")
+            color_map_group.setMaximumWidth(300)
+            color_map_layout = QGridLayout()
+            color_map_layout.setSpacing(5)
+            
+            # Load color configuration
+            with open(os.path.join(cargia_dir, "color_config.json"), 'r') as f:
+                self.color_config = json.load(f)
+            
+            # Create color swatches in a 3x4 grid
+            row = 0
+            col = 0
+            for number, config in self.color_config.items():
+                swatch_container = QWidget()
+                swatch_layout = QVBoxLayout(swatch_container)
+                swatch_layout.setContentsMargins(2, 2, 2, 2)
+                
+                swatch = ColorSwatch(config['color'], config['name'], number)
+                label = QLabel(config['name'])
+                label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                
+                swatch_layout.addWidget(swatch, alignment=Qt.AlignmentFlag.AlignCenter)
+                swatch_layout.addWidget(label, alignment=Qt.AlignmentFlag.AlignCenter)
+                
+                color_map_layout.addWidget(swatch_container, row, col)
+                
+                col += 1
+                if col >= 3:
+                    col = 0
+                    row += 1
+            
+            color_map_group.setLayout(color_map_layout)
+            controls_layout.addWidget(color_map_group)
+            
+            # Metadata section
             metadata_group = QGroupBox("Metadata")
-            metadata_group.setMaximumWidth(200)  # Limit the width of the metadata group
+            metadata_group.setMaximumWidth(200)
             metadata_layout = QVBoxLayout()
-            metadata_layout.setSpacing(2)  # Reduce spacing between buttons
+            metadata_layout.setSpacing(2)
             
             # Create toggle buttons for metadata labels
             self.metadata_buttons = {}
@@ -293,8 +353,8 @@ class MainWindow(QMainWindow):
             for label in metadata_labels:
                 btn = QPushButton(label)
                 btn.setCheckable(True)
-                btn.setEnabled(False)  # Disabled until task is loaded
-                btn.setMaximumWidth(180)  # Limit button width
+                btn.setEnabled(False)
+                btn.setMaximumWidth(180)
                 btn.clicked.connect(lambda checked, l=label: self.update_metadata_label(l, checked))
                 self.metadata_buttons[label] = btn
                 metadata_layout.addWidget(btn)
@@ -310,6 +370,7 @@ class MainWindow(QMainWindow):
             scroll_area.setWidgetResizable(True)
             scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
             scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+            scroll_area.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)  # Allow vertical expansion
             
             # Create container for pairs
             self.pairs_container = QWidget()
@@ -337,13 +398,16 @@ class MainWindow(QMainWindow):
             # Update window title with current user
             self.update_window_title()
             
+            # Create keyboard shortcuts
+            self.create_shortcuts()
+            
             print("MainWindow initialized successfully")
         except Exception as e:
             log_error("Failed to initialize MainWindow", e)
             raise
     
     def create_menu_bar(self):
-        """Create the menu bar with settings menu."""
+        """Create the menu bar with settings and shortcuts menus."""
         menu_bar = self.menuBar()
         
         # Settings menu
@@ -359,6 +423,29 @@ class MainWindow(QMainWindow):
         # Data directory action
         data_dir_action = settings_menu.addAction("Data Directory...")
         data_dir_action.triggered.connect(self.show_settings_dialog)
+        
+        # Shortcuts menu
+        shortcuts_menu = menu_bar.addMenu("Shortcuts")
+        
+        # Main actions shortcuts
+        shortcuts_menu.addAction("New Solve (Ctrl+N)")
+        shortcuts_menu.addAction("Show Next Pair (Ctrl+Space)")
+        
+        # Add separator before metadata shortcuts
+        shortcuts_menu.addSeparator()
+        shortcuts_menu.addAction("Metadata Toggles:")
+        
+        # Metadata shortcuts
+        metadata_shortcuts = {
+            "Rotational": "Ctrl+R",
+            "Horizontal": "Ctrl+H",
+            "Vertical": "Ctrl+V",
+            "Translation": "Ctrl+T",
+            "Invertable": "Ctrl+I"
+        }
+        
+        for label, shortcut in metadata_shortcuts.items():
+            shortcuts_menu.addAction(f"{label} ({shortcut})")
     
     def show_set_user_dialog(self):
         """Show the set user dialog and update user if changed."""
@@ -451,6 +538,13 @@ class MainWindow(QMainWindow):
             
             # Update task name
             self.task_name_label.setText(f"Task: {next_task['task_id']}")
+            
+            # Reset metadata labels to all False
+            self.metadata_labels = {label: False for label in self.metadata_labels.keys()}
+            
+            # Update button states to reflect reset metadata
+            for label, btn in self.metadata_buttons.items():
+                btn.setChecked(False)
             
             # Enable metadata buttons
             self.enable_metadata_buttons(True)
@@ -625,6 +719,44 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'transcription_manager'):
             self.transcription_manager.stop_transcription()
             self.transcription_manager.cleanup()
+    
+    def create_shortcuts(self):
+        """Create keyboard shortcuts for common actions."""
+        # New Solve shortcut (Ctrl+N)
+        new_solve_action = QAction("New Solve", self)
+        new_solve_action.setShortcut("Ctrl+N")
+        new_solve_action.triggered.connect(self.start_new_solve)
+        self.addAction(new_solve_action)
+        
+        # Show Next Pair shortcut (Ctrl+Space)
+        next_pair_action = QAction("Show Next Pair", self)
+        next_pair_action.setShortcut("Ctrl+Space")
+        next_pair_action.triggered.connect(self.show_next_pair)
+        self.addAction(next_pair_action)
+        
+        # Metadata shortcuts
+        metadata_shortcuts = {
+            "Rotational": "Ctrl+R",
+            "Horizontal": "Ctrl+H",
+            "Vertical": "Ctrl+V",
+            "Translation": "Ctrl+T",
+            "Invertable": "Ctrl+I"
+        }
+        
+        for label, shortcut in metadata_shortcuts.items():
+            action = QAction(f"Toggle {label}", self)
+            action.setShortcut(shortcut)
+            action.triggered.connect(lambda checked, l=label: self.toggle_metadata(l))
+            self.addAction(action)
+    
+    def toggle_metadata(self, label):
+        """Toggle a metadata label using keyboard shortcut."""
+        if label in self.metadata_buttons:
+            btn = self.metadata_buttons[label]
+            if btn.isEnabled():
+                new_state = not btn.isChecked()
+                btn.setChecked(new_state)
+                self.update_metadata_label(label, new_state)
 
 def main():
     try:
