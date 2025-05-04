@@ -719,6 +719,10 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'transcription_manager'):
             self.transcription_manager.stop_transcription()
             self.transcription_manager.cleanup()
+        
+        # Create final backup before shutting down
+        if hasattr(self, 'data_manager'):
+            self.data_manager.backup_databases()
     
     def create_shortcuts(self):
         """Create keyboard shortcuts for common actions."""

@@ -55,10 +55,12 @@ class DataManager:
                 self.current_user = settings.get('user', '')
                 self.data_dir = settings.get('data_dir', 'data')
                 self.order_map_type = settings.get('order_map_type', 'default')
+                self.backup_dir = settings.get('backup_dir', 'data/backup')
         else:
             self.current_user = ''
             self.data_dir = 'data'
             self.order_map_type = 'default'
+            self.backup_dir = 'data/backup'
     
     def save_settings(self):
         """Save current settings to the settings file."""
@@ -219,6 +221,92 @@ class DataManager:
         conn.commit()
         conn.close()
     
+    def _validate_backup_dir(self):
+        """Validate that the backup directory is safe to use.
+        Returns True if the directory is safe, False otherwise."""
+        try:
+            # Check if backup_dir is a subdirectory of data_dir
+            backup_abs = os.path.abspath(self.backup_dir)
+            data_abs = os.path.abspath(self.data_dir)
+            if not backup_abs.startswith(data_abs):
+                log_error(f"Backup directory {self.backup_dir} is not a subdirectory of data directory {self.data_dir}")
+                return False
+            
+            # Check if backup_dir exists and is a directory
+            if os.path.exists(self.backup_dir) and not os.path.isdir(self.backup_dir):
+                log_error(f"Backup directory {self.backup_dir} exists but is not a directory")
+                return False
+            
+            # If backup_dir exists, check its contents
+            if os.path.exists(self.backup_dir):
+                for item in os.listdir(self.backup_dir):
+                    item_path = os.path.join(self.backup_dir, item)
+                    # Only allow timestamped directories and .db files
+                    if os.path.isdir(item_path):
+                        if not (item.replace("_", "").isdigit() and len(item) == 15):  # YYYYMMDD_HHMMSS format
+                            log_error(f"Found non-backup directory in backup folder: {item}")
+                            return False
+                    elif os.path.isfile(item_path):
+                        if not (item.endswith('.db') and item in ['solves.db', 'thoughts.db']):
+                            log_error(f"Found non-backup file in backup folder: {item}")
+                            return False
+            
+            return True
+        except Exception as e:
+            log_error("Failed to validate backup directory", e)
+            return False
+
+    def backup_databases(self):
+        """Create a backup of both databases in a timestamped folder.
+        Maintains a maximum of 20 backups by removing the oldest ones when needed."""
+        try:
+            # Validate backup directory
+            if not self._validate_backup_dir():
+                log_error("Backup directory validation failed, aborting backup")
+                return
+            
+            # Create backup directory if it doesn't exist
+            os.makedirs(self.backup_dir, exist_ok=True)
+            
+            # Create timestamped backup folder
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup_folder = os.path.join(self.backup_dir, timestamp)
+            os.makedirs(backup_folder, exist_ok=True)
+            
+            # Copy both databases
+            import shutil
+            shutil.copy2(self.solves_db_path, os.path.join(backup_folder, "solves.db"))
+            shutil.copy2(self.thoughts_db_path, os.path.join(backup_folder, "thoughts.db"))
+            
+            # Get list of all backup folders
+            backup_folders = [d for d in os.listdir(self.backup_dir) 
+                            if os.path.isdir(os.path.join(self.backup_dir, d)) 
+                            and d.replace("_", "").isdigit()  # Only consider timestamped folders
+                            and len(d) == 15]  # Ensure proper format (YYYYMMDD_HHMMSS)
+            
+            # Sort by timestamp (folder name)
+            backup_folders.sort()
+            
+            # Remove oldest backups if we have more than 20
+            while len(backup_folders) > 20:
+                oldest_backup = backup_folders.pop(0)
+                oldest_path = os.path.join(self.backup_dir, oldest_backup)
+                try:
+                    # Double check the folder only contains our backup files
+                    contents = os.listdir(oldest_path)
+                    if not all(f in ['solves.db', 'thoughts.db'] for f in contents):
+                        log_error(f"Found unexpected files in backup folder {oldest_backup}, skipping deletion")
+                        continue
+                    
+                    shutil.rmtree(oldest_path)
+                    print(f"Removed oldest backup: {oldest_backup}")
+                except Exception as e:
+                    log_error(f"Failed to remove old backup {oldest_backup}", e)
+            
+            print(f"Created backup in {backup_folder}")
+        except Exception as e:
+            log_error("Failed to create database backup", e)
+    
     def complete_solve(self, solve_id: int):
         """Mark a solve as completed by setting its end time."""
         conn = sqlite3.connect(self.solves_db_path)
@@ -230,6 +318,9 @@ class DataManager:
         """, (datetime.now().isoformat(), solve_id))
         conn.commit()
         conn.close()
+        
+        # Create backup after completing a solve
+        self.backup_databases()
     
     def save_databases(self):
         """Save both databases to CSV files."""
