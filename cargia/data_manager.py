@@ -150,6 +150,9 @@ class DataManager:
             with open(training_tasks_path, 'r') as f:
                 task_ids = [line.strip() for line in f if line.strip()]
             
+            # Randomize the order of tasks
+            random.shuffle(task_ids)
+            
             # For each task, try to find one that hasn't been solved with this order
             for task_id in task_ids:
                 task_path = os.path.join(self.source_folder, "training", f"{task_id}.json")
@@ -494,6 +497,36 @@ class DataManager:
             return solves
         finally:
             conn.close()
+    
+    def get_total_solves_count(self) -> int:
+        """Get the total number of solves for the current user."""
+        if not self.current_user:
+            return 0
+            
+        try:
+            conn = sqlite3.connect(self.solves_db_path)
+            cursor = conn.cursor()
+            
+            # Debug log the query
+            print(f"Counting solves for user: {self.current_user}")
+            print(f"Using database path: {self.solves_db_path}")
+            
+            cursor.execute("""
+                SELECT COUNT(*)
+                FROM solves
+                WHERE user_id = ?
+            """, (self.current_user,))
+            
+            count = cursor.fetchone()[0]
+            print(f"Found {count} solves for user {self.current_user}")
+            
+            return count
+        except Exception as e:
+            log_error(f"Failed to get total solves count for user {self.current_user}", e)
+            return 0
+        finally:
+            if 'conn' in locals():
+                conn.close()
     
     def set_order_map_type(self, order_map_type: str):
         """Set the order map type and save to settings."""

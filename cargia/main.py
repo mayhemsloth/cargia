@@ -5,13 +5,14 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                            QHBoxLayout, QPushButton, QLabel, QFileDialog, 
                            QGridLayout, QGroupBox, QCheckBox, QMessageBox,
                            QMenuBar, QMenu, QDialog, QLineEdit, QDialogButtonBox,
-                           QTextEdit, QScrollArea, QFrame, QSizePolicy)
+                           QTextEdit, QScrollArea, QFrame, QSizePolicy, QTableWidget, QTableWidgetItem)
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor, QPalette, QTextCursor, QFont, QAction
 from grid_widget import GridWidget
 from data_manager import DataManager
 import os
 from transcription import TranscriptionManager
+import sqlite3
 
 def get_repo_root():
     """Get the absolute path to the cargia directory."""
@@ -131,6 +132,134 @@ class SetUserDialog(QDialog):
     
     def get_user(self):
         return self.user_edit.text().strip()
+
+class JsonViewerDialog(QDialog):
+    def __init__(self, json_str, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("JSON Content")
+        self.setMinimumSize(600, 400)
+        
+        layout = QVBoxLayout()
+        
+        # Create text widget
+        self.text_widget = QTextEdit()
+        self.text_widget.setReadOnly(True)
+        
+        # Set monospace font
+        font = QFont("Consolas", 10)
+        self.text_widget.setFont(font)
+        
+        try:
+            # Parse and format JSON
+            json_obj = json.loads(json_str)
+            formatted_json = json.dumps(json_obj, indent=2)
+            self.text_widget.setPlainText(formatted_json)
+        except:
+            self.text_widget.setPlainText(str(json_str))
+        
+        layout.addWidget(self.text_widget)
+        
+        # Add close button
+        close_btn = QPushButton("Close")
+        close_btn.clicked.connect(self.accept)
+        layout.addWidget(close_btn)
+        
+        self.setLayout(layout)
+
+class DatabaseViewerDialog(QDialog):
+    def __init__(self, db_path, table_name, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(f"View {table_name} Database")
+        self.setMinimumSize(1000, 800)
+        
+        # Create layout
+        layout = QVBoxLayout()
+        
+        # Create table widget
+        self.table = QTableWidget()
+        self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.table.setAlternatingRowColors(True)
+        self.table.cellClicked.connect(self.handle_cell_click)
+        layout.addWidget(self.table)
+        
+        # Add close button
+        close_btn = QPushButton("Close")
+        close_btn.clicked.connect(self.accept)
+        layout.addWidget(close_btn)
+        
+        self.setLayout(layout)
+        
+        # Store JSON data
+        self.json_data = {}  # Store original JSON strings
+        
+        # Load data
+        self.load_database(db_path, table_name)
+    
+    def handle_cell_click(self, row, col):
+        """Handle cell click to show JSON content in a modal dialog."""
+        cell_key = (row, col)
+        
+        # Check if this is a JSON cell
+        if cell_key in self.json_data:
+            dialog = JsonViewerDialog(self.json_data[cell_key], self)
+            dialog.exec()
+    
+    def load_database(self, db_path, table_name):
+        """Load and display database contents."""
+        try:
+            self.db_path = db_path
+            self.table_name = table_name
+            
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            
+            # Get column names
+            cursor.execute(f"PRAGMA table_info({table_name})")
+            columns = [col[1] for col in cursor.fetchall()]
+            
+            # Get data
+            cursor.execute(f"SELECT * FROM {table_name}")
+            rows = cursor.fetchall()
+            
+            # Set up table
+            self.table.setColumnCount(len(columns))
+            self.table.setRowCount(len(rows))
+            self.table.setHorizontalHeaderLabels(columns)
+            
+            # Fill table with data
+            for i, row in enumerate(rows):
+                for j, value in enumerate(row):
+                    if value is None:
+                        item = QTableWidgetItem("")
+                        self.table.setItem(i, j, item)
+                    elif isinstance(value, str) and (value.startswith('{') or value.startswith('[')):
+                        # Store original JSON data
+                        self.json_data[(i, j)] = value
+                        # Show first line of JSON with ellipsis
+                        try:
+                            json_obj = json.loads(value)
+                            first_line = json.dumps(json_obj, indent=2).split('\n')[0]
+                            item = QTableWidgetItem(first_line + " ...")
+                        except:
+                            item = QTableWidgetItem(str(value))
+                        self.table.setItem(i, j, item)
+                    else:
+                        item = QTableWidgetItem(str(value))
+                        self.table.setItem(i, j, item)
+            
+            # Resize columns to content
+            self.table.resizeColumnsToContents()
+            
+            # Set minimum column width
+            for i in range(self.table.columnCount()):
+                self.table.setColumnWidth(i, max(100, self.table.columnWidth(i)))
+            
+        except Exception as e:
+            log_error(f"Failed to load database {table_name}", e)
+            QMessageBox.critical(self, "Error", f"Failed to load database: {str(e)}")
+        finally:
+            if 'conn' in locals():
+                conn.close()
 
 class PairWidget(QWidget):
     def __init__(self, parent=None):
@@ -285,26 +414,52 @@ class MainWindow(QMainWindow):
             self.next_pair_btn.setEnabled(False)
             task_row_layout.addWidget(self.next_pair_btn)
             
+            task_controls_layout.addLayout(task_row_layout)
+            controls_layout.addLayout(task_controls_layout)
+            
+            # Add a spacer to push right-side elements to the right
+            controls_layout.addStretch()
+            
+            # Information section
+            info_group = QGroupBox("Information")
+            info_group.setMaximumWidth(300)
+            info_layout = QVBoxLayout()
+            info_layout.setSpacing(5)
+            
             # Task name display
             self.task_name_label = QLabel("Task: None")
-            task_row_layout.addWidget(self.task_name_label)
+            info_layout.addWidget(self.task_name_label)
+            
+            # Total solves count
+            self.total_solves_label = QLabel("Total Solves: 0")
+            info_layout.addWidget(self.total_solves_label)
+            
+            # Add database viewer buttons
+            db_buttons_layout = QHBoxLayout()
+            
+            view_solves_btn = QPushButton("View Solves DB")
+            view_solves_btn.clicked.connect(lambda: self.show_database_viewer("solves"))
+            db_buttons_layout.addWidget(view_solves_btn)
+            
+            view_thoughts_btn = QPushButton("View Thoughts DB")
+            view_thoughts_btn.clicked.connect(lambda: self.show_database_viewer("thoughts"))
+            db_buttons_layout.addWidget(view_thoughts_btn)
+            
+            info_layout.addLayout(db_buttons_layout)
             
             # Add transcription toggle button
             self.transcription_toggle = QPushButton("Start Transcription")
             self.transcription_toggle.setCheckable(True)
             self.transcription_toggle.setEnabled(True)
             self.transcription_toggle.clicked.connect(self.toggle_transcription)
-            task_row_layout.addWidget(self.transcription_toggle)
+            info_layout.addWidget(self.transcription_toggle)
             
             # Add transcription status indicator
             self.transcription_status = QLabel("Transcription: Off")
-            task_row_layout.addWidget(self.transcription_status)
+            info_layout.addWidget(self.transcription_status)
             
-            task_controls_layout.addLayout(task_row_layout)
-            controls_layout.addLayout(task_controls_layout)
-            
-            # Add a spacer to push right-side elements to the right
-            controls_layout.addStretch()
+            info_group.setLayout(info_layout)
+            controls_layout.addWidget(info_group)
             
             # Color map display in a grid
             color_map_group = QGroupBox("Color Map Reference")
@@ -402,6 +557,8 @@ class MainWindow(QMainWindow):
             self.create_shortcuts()
             
             print("MainWindow initialized successfully")
+            # Update total solves count on startup
+            self.update_total_solves_count()
         except Exception as e:
             log_error("Failed to initialize MainWindow", e)
             raise
@@ -455,6 +612,7 @@ class MainWindow(QMainWindow):
             if new_user and new_user != self.data_manager.current_user:
                 self.data_manager.set_current_user(new_user)
                 self.update_window_title()
+                self.update_total_solves_count()  # Update count when user changes
                 QMessageBox.information(
                     self,
                     "User Updated",
@@ -501,6 +659,11 @@ class MainWindow(QMainWindow):
             if not enabled:
                 btn.setChecked(False)
     
+    def update_total_solves_count(self):
+        """Update the total solves count display."""
+        count = self.data_manager.get_total_solves_count()
+        self.total_solves_label.setText(f"Total Solves: {count}")
+    
     def start_new_solve(self):
         """Start a new solve by finding the next unsolved task."""
         try:
@@ -514,12 +677,12 @@ class MainWindow(QMainWindow):
                 )
                 return
             
-            # Create solve entry
+            # Create solve entry with current color map
             self.current_solve_id = self.data_manager.create_solve(
                 task_id=next_task["task_id"],
                 order_map=next_task["order_map"],
                 order_map_type="default",
-                color_map={},  # TODO: Add color mapping
+                color_map=self.color_config,  # Use the loaded color configuration
                 metadata_labels=self.metadata_labels
             )
             
@@ -538,6 +701,9 @@ class MainWindow(QMainWindow):
             
             # Update task name
             self.task_name_label.setText(f"Task: {next_task['task_id']}")
+            
+            # Update total solves count
+            self.update_total_solves_count()
             
             # Reset metadata labels to all False
             self.metadata_labels = {label: False for label in self.metadata_labels.keys()}
@@ -558,6 +724,10 @@ class MainWindow(QMainWindow):
             if 'train' in self.current_task and self.current_task['train']:
                 self.add_pair_widget()
                 self.next_pair_btn.setEnabled(True)
+                self.next_pair_action.setEnabled(True)
+                # Reset button appearance
+                self.next_pair_btn.setText("Show Next Pair")
+                self.next_pair_btn.setStyleSheet("")
             
         except Exception as e:
             log_error("Failed to start new solve", e)
@@ -622,7 +792,7 @@ class MainWindow(QMainWindow):
         try:
             # Save current thought
             if self.pair_widgets:
-                current_widget = self.pair_widgets[-1]
+                current_widget = self.pair_widgets[0]  # Get the most recently added pair widget
                 thought_text = current_widget.get_thought_text()
                 if thought_text:
                     pair_type = "test" if self.showing_test_pairs else "train"
@@ -647,9 +817,16 @@ class MainWindow(QMainWindow):
                     self.current_test_index = 0
                     if self.current_task.get('test') and len(self.current_task['test']) > 0:
                         self.add_pair_widget()
+                        # Update button for last test pair
+                        if len(self.current_task['test']) == 1:
+                            self.next_pair_btn.setText("Finish Solve")
+                            self.next_pair_btn.setStyleSheet("background-color: #ff4444; color: white;")
                     else:
                         # No test pairs, complete the solve
+                        self.next_pair_btn.setText("Solve Complete")
+                        self.next_pair_btn.setStyleSheet("background-color: #cccccc; color: #666666;")
                         self.next_pair_btn.setEnabled(False)
+                        self.next_pair_action.setEnabled(False)
                         self.data_manager.complete_solve(self.current_solve_id)
                         QMessageBox.information(
                             self,
@@ -662,9 +839,16 @@ class MainWindow(QMainWindow):
                 
                 if self.current_test_index < len(self.current_task['test']):
                     self.add_pair_widget()
+                    # Update button for last test pair
+                    if self.current_test_index == len(self.current_task['test']) - 1:
+                        self.next_pair_btn.setText("Finish Solve")
+                        self.next_pair_btn.setStyleSheet("background-color: #ff4444; color: white;")
                 else:
                     # No more pairs, complete the solve
+                    self.next_pair_btn.setText("Solve Complete")
+                    self.next_pair_btn.setStyleSheet("background-color: #cccccc; color: #666666;")
                     self.next_pair_btn.setEnabled(False)
+                    self.next_pair_action.setEnabled(False)
                     self.data_manager.complete_solve(self.current_solve_id)
                     QMessageBox.information(
                         self,
@@ -733,10 +917,10 @@ class MainWindow(QMainWindow):
         self.addAction(new_solve_action)
         
         # Show Next Pair shortcut (Ctrl+Space)
-        next_pair_action = QAction("Show Next Pair", self)
-        next_pair_action.setShortcut("Ctrl+Space")
-        next_pair_action.triggered.connect(self.show_next_pair)
-        self.addAction(next_pair_action)
+        self.next_pair_action = QAction("Show Next Pair", self)
+        self.next_pair_action.setShortcut("Ctrl+Space")
+        self.next_pair_action.triggered.connect(self.show_next_pair)
+        self.addAction(self.next_pair_action)
         
         # Metadata shortcuts
         metadata_shortcuts = {
@@ -761,6 +945,22 @@ class MainWindow(QMainWindow):
                 new_state = not btn.isChecked()
                 btn.setChecked(new_state)
                 self.update_metadata_label(label, new_state)
+
+    def show_database_viewer(self, db_type):
+        """Show the database viewer dialog for the specified database."""
+        try:
+            if db_type == "solves":
+                db_path = self.data_manager.solves_db_path
+                table_name = "solves"
+            else:  # thoughts
+                db_path = self.data_manager.thoughts_db_path
+                table_name = "thoughts"
+            
+            dialog = DatabaseViewerDialog(db_path, table_name, self)
+            dialog.exec()
+        except Exception as e:
+            log_error(f"Failed to show {db_type} database viewer", e)
+            QMessageBox.critical(self, "Error", f"Failed to show database viewer: {str(e)}")
 
 def main():
     try:
