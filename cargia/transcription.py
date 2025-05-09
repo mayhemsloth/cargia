@@ -16,8 +16,8 @@ import functools
 
 
 SAMPLE_RATE = 16000
-CHUNK_DURATION = 8
-CHUNK_SIZE = int(SAMPLE_RATE * CHUNK_DURATION)
+CHUNK_DURATION = 200 # ms per mini-chunk
+CHUNK_SIZE = int(SAMPLE_RATE * CHUNK_DURATION / 1000)
 
 
 class TranscriptionManager:
@@ -122,6 +122,69 @@ class TranscriptionManager:
                 time.sleep(0.1)
 
     def _transcribe_loop(self):
+        model = self.model
+        buf = np.zeros((0,), dtype=np.int16)
+        silent_chunks = 0
+        max_chunks = int(self.settings["max_utterance_duration"] * 1000 / CHUNK_DURATION)
+        silence_limit = int(self.settings["silence_duration"] * 1000 / CHUNK_DURATION)
+        thresh = self.settings["silence_threshold"] * 32768  # back to int16 scale
+
+        print("Silence-driven transcriber started")
+
+        while self.is_recording:
+            # 1) Read one mini-chunk
+            data = self.audio_queue.get()
+            pcm = np.squeeze(data)
+            buf = np.concatenate((buf, pcm))
+
+            # 2) Measure “energy” of this mini-chunk
+            if np.mean(np.abs(pcm)) < thresh:
+                silent_chunks += 1
+            else:
+                silent_chunks = 0
+
+            # 3) Decide if we should flush
+            too_long = len(buf) > max_chunks * CHUNK_SIZE
+            enough_silence = silent_chunks >= silence_limit
+
+            if too_long or (enough_silence and len(buf) > CHUNK_SIZE):
+                # Remove trailing silence if you like:
+                buf_to_transcribe = buf.copy()
+
+                # ── Skip pure silence ──────────────────────────────────────────────────
+                if enough_silence:
+                    full_energy = np.mean(np.abs(buf_to_transcribe))
+                    energy_thresh = self.settings["silence_threshold"] * 32768
+                    if full_energy < energy_thresh:
+                        # pure silence: drop and reset
+                        buf = np.zeros((0,), dtype=np.int16)
+                        silent_chunks = 0
+                        continue
+                # ──────────────────────────────────────────────────────────────────────
+
+                # Normalize
+                audio_float = buf_to_transcribe.astype(np.float32) / 32768.0
+
+                # Transcribe in one shot
+                segments, _ = model.transcribe(
+                    audio_float,
+                    beam_size=self.settings.get("beam_size", 10),
+                    language=self.settings.get("language", "en"),
+                    vad_filter=False
+                )
+
+                # Send all text back
+                text = " ".join(seg.text.strip() for seg in segments)
+                if text and self.transcription_callback:
+                    from PyQt6.QtCore import QTimer
+                    import functools
+                    QTimer.singleShot(0, functools.partial(self.transcription_callback, text + " "))
+
+                # Reset buffer & counters
+                buf = np.zeros((0,), dtype=np.int16)
+                silent_chunks = 0
+
+    def _transcribe_loop_old(self):
         """Transciption loop"""
         model = self.model  # already initialized
         buffer = np.zeros((0,), dtype=np.int16)

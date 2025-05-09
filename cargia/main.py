@@ -549,6 +549,7 @@ class MainWindow(QMainWindow):
             self.current_solve_id = None
             self.metadata_labels = {label: False for label in metadata_labels}
             self.showing_test_pairs = False  # Track whether we're showing test pairs
+            self.pending_thoughts = []  # Store thoughts until solve is complete
             
             # Update window title with current user
             self.update_window_title()
@@ -677,22 +678,16 @@ class MainWindow(QMainWindow):
                 )
                 return
             
-            # Create solve entry with current color map
-            self.current_solve_id = self.data_manager.create_solve(
-                task_id=next_task["task_id"],
-                order_map=next_task["order_map"],
-                order_map_type="default",
-                color_map=self.color_config,  # Use the loaded color configuration
-                metadata_labels=self.metadata_labels
-            )
-            
-            # Load the task
+            # Store task info but don't create solve entry yet
             self.current_task = next_task["task_data"]
             self.current_task_path = os.path.join(
                 self.data_manager.source_folder,
                 "training",
                 f"{next_task['task_id']}.json"
             )
+            self.pending_task_id = next_task["task_id"]
+            self.pending_order_map = next_task["order_map"]
+            self.pending_thoughts = []  # Reset pending thoughts
             
             # Clear existing pairs
             for widget in self.pair_widgets:
@@ -701,9 +696,6 @@ class MainWindow(QMainWindow):
             
             # Update task name
             self.task_name_label.setText(f"Task: {next_task['task_id']}")
-            
-            # Update total solves count
-            self.update_total_solves_count()
             
             # Reset metadata labels to all False
             self.metadata_labels = {label: False for label in self.metadata_labels.keys()}
@@ -790,20 +782,19 @@ class MainWindow(QMainWindow):
     def show_next_pair(self):
         """Show the next pair in the current task."""
         try:
-            # Save current thought
+            # Save current thought to pending thoughts
             if self.pair_widgets:
                 current_widget = self.pair_widgets[0]  # Get the most recently added pair widget
                 thought_text = current_widget.get_thought_text()
                 if thought_text:
                     pair_type = "test" if self.showing_test_pairs else "train"
                     sequence_index = self.current_test_index if self.showing_test_pairs else self.current_train_index
-                    self.data_manager.add_thought(
-                        solve_id=self.current_solve_id,
-                        pair_label=chr(97 + sequence_index),  # 'a', 'b', 'c', etc.
-                        pair_type=pair_type,
-                        sequence_index=sequence_index,
-                        thought_text=thought_text
-                    )
+                    self.pending_thoughts.append({
+                        'pair_label': chr(97 + sequence_index),  # 'a', 'b', 'c', etc.
+                        'pair_type': pair_type,
+                        'sequence_index': sequence_index,
+                        'thought_text': thought_text
+                    })
             
             if not self.showing_test_pairs:
                 # Move to next training pair
@@ -823,16 +814,7 @@ class MainWindow(QMainWindow):
                             self.next_pair_btn.setStyleSheet("background-color: #ff4444; color: white;")
                     else:
                         # No test pairs, complete the solve
-                        self.next_pair_btn.setText("Solve Complete")
-                        self.next_pair_btn.setStyleSheet("background-color: #cccccc; color: #666666;")
-                        self.next_pair_btn.setEnabled(False)
-                        self.next_pair_action.setEnabled(False)
-                        self.data_manager.complete_solve(self.current_solve_id)
-                        QMessageBox.information(
-                            self,
-                            "Solve Complete",
-                            "All pairs have been shown. The solve has been saved."
-                        )
+                        self.complete_solve()
             else:
                 # Move to next test pair
                 self.current_test_index += 1
@@ -845,19 +827,53 @@ class MainWindow(QMainWindow):
                         self.next_pair_btn.setStyleSheet("background-color: #ff4444; color: white;")
                 else:
                     # No more pairs, complete the solve
-                    self.next_pair_btn.setText("Solve Complete")
-                    self.next_pair_btn.setStyleSheet("background-color: #cccccc; color: #666666;")
-                    self.next_pair_btn.setEnabled(False)
-                    self.next_pair_action.setEnabled(False)
-                    self.data_manager.complete_solve(self.current_solve_id)
-                    QMessageBox.information(
-                        self,
-                        "Solve Complete",
-                        "All pairs have been shown. The solve has been saved."
-                    )
+                    self.complete_solve()
         except Exception as e:
             log_error("Failed to show next pair", e)
             QMessageBox.critical(self, "Error", f"Failed to show next pair: {str(e)}")
+    
+    def complete_solve(self):
+        """Complete the current solve by saving all data to the database."""
+        try:
+            # Create solve entry
+            self.current_solve_id = self.data_manager.create_solve(
+                task_id=self.pending_task_id,
+                order_map=self.pending_order_map,
+                order_map_type="default",
+                color_map=self.color_config,
+                metadata_labels=self.metadata_labels
+            )
+            
+            # Save all pending thoughts
+            for thought in self.pending_thoughts:
+                self.data_manager.add_thought(
+                    solve_id=self.current_solve_id,
+                    pair_label=thought['pair_label'],
+                    pair_type=thought['pair_type'],
+                    sequence_index=thought['sequence_index'],
+                    thought_text=thought['thought_text']
+                )
+            
+            # Mark solve as complete
+            self.data_manager.complete_solve(self.current_solve_id)
+            
+            # Update UI
+            self.next_pair_btn.setText("Solve Complete")
+            self.next_pair_btn.setStyleSheet("background-color: #cccccc; color: #666666;")
+            self.next_pair_btn.setEnabled(False)
+            self.next_pair_action.setEnabled(False)
+            
+            # Update total solves count
+            self.update_total_solves_count()
+            
+            QMessageBox.information(
+                self,
+                "Solve Complete",
+                "All pairs have been shown. The solve has been saved."
+            )
+        except Exception as e:
+            log_error("Failed to complete solve", e)
+            QMessageBox.critical(self, "Error", f"Failed to complete solve: {str(e)}")
     
     def toggle_transcription(self, checked: bool):
         """Toggle transcription on/off."""
