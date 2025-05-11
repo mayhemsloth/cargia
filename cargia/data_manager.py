@@ -213,17 +213,6 @@ class DataManager:
         finally:
             conn.close()
     
-    def save_thought(self, solve_id: int, pair_index: int, thought_text: str):
-        """Save a thought for a specific pair in a solve."""
-        conn = sqlite3.connect(self.thoughts_db_path)
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO thoughts (solve_id, pair_index, thought_text)
-            VALUES (?, ?, ?)
-        """, (solve_id, pair_index, thought_text))
-        conn.commit()
-        conn.close()
-    
     def _validate_backup_dir(self):
         """Validate that the backup directory is safe to use.
         Returns True if the directory is safe, False otherwise."""
@@ -341,7 +330,8 @@ class DataManager:
         order_map: Dict[str, List[str]],
         order_map_type: str,
         color_map: Dict[int, str],
-        metadata_labels: Dict[str, bool]
+        metadata_labels: Dict[str, bool],
+        start_time: Optional[datetime] = None
     ) -> int:
         """Create a new solve entry and return its solve_id."""
         if not self.current_user:
@@ -351,6 +341,9 @@ class DataManager:
         cursor = conn.cursor()
         
         try:
+            # Use provided start_time or current time
+            start_time_str = start_time.isoformat() if start_time else datetime.now().isoformat()
+            
             cursor.execute("""
                 INSERT INTO solves (task_id, user_id, order_map_type, order_map, color_map, metadata_labels, start_time)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -361,7 +354,7 @@ class DataManager:
                 json.dumps(order_map),
                 json.dumps(color_map),
                 json.dumps(metadata_labels),
-                datetime.now().isoformat()
+                start_time_str
             ))
             solve_id = cursor.lastrowid
             conn.commit()

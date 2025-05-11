@@ -170,7 +170,9 @@ class TranscriptionManager:
                     audio_float,
                     beam_size=self.settings.get("beam_size", 10),
                     language=self.settings.get("language", "en"),
-                    vad_filter=False
+                    vad_filter=False,
+                    no_speech_threshold=0.75,
+                    condition_on_previous_text=True
                 )
 
                 # Send all text back

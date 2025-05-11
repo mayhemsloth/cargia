@@ -1,7 +1,7 @@
 import os
 import sqlite3
 import json
-from data_manager import get_repo_root, log_error
+from cargia.data_manager import get_repo_root, log_error
 
 def cleanup_incomplete_solves():
     """Remove all solves without an end_time and their associated thoughts."""

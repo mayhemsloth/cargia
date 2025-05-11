@@ -13,6 +13,7 @@ from data_manager import DataManager
 import os
 from transcription import TranscriptionManager
 import sqlite3
+from datetime import datetime
 
 def get_repo_root():
     """Get the absolute path to the cargia directory."""
@@ -549,7 +550,8 @@ class MainWindow(QMainWindow):
             self.current_solve_id = None
             self.metadata_labels = {label: False for label in metadata_labels}
             self.showing_test_pairs = False  # Track whether we're showing test pairs
-            self.pending_thoughts = []  # Store thoughts until solve is complete
+            self.pending_thoughts = {}  # Store thoughts by pair index until solve is complete
+            self.solve_start_time = None  # Track when the solve started
             
             # Update window title with current user
             self.update_window_title()
@@ -687,7 +689,8 @@ class MainWindow(QMainWindow):
             )
             self.pending_task_id = next_task["task_id"]
             self.pending_order_map = next_task["order_map"]
-            self.pending_thoughts = []  # Reset pending thoughts
+            self.pending_thoughts = {}  # Reset pending thoughts
+            self.solve_start_time = datetime.now()  # Record start time
             
             # Clear existing pairs
             for widget in self.pair_widgets:
@@ -724,39 +727,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             log_error("Failed to start new solve", e)
             QMessageBox.critical(self, "Error", f"Failed to start new solve: {str(e)}")
-    
-    def load_task(self, task_path):
-        """Load a task from the specified path."""
-        try:
-            with open(task_path, 'r') as f:
-                self.current_task = json.load(f)
-                self.current_task_path = task_path
-                
-                # Clear existing pairs
-                for widget in self.pair_widgets:
-                    widget.deleteLater()
-                self.pair_widgets.clear()
-                
-                # Update task name
-                task_id = os.path.basename(task_path)[:-5]  # Remove .json extension
-                self.task_name_label.setText(f"Task: {task_id}")
-                
-                # Create first pair widget
-                if 'train' in self.current_task and self.current_task['train']:
-                    self.current_train_index = 0
-                    self.add_pair_widget()
-                    self.next_pair_btn.setEnabled(True)
-                    
-                    # Create solve entry
-                    self.current_solve_id = self.data_manager.create_solve(
-                        task_id=task_id,
-                        order_map={"train": [], "test": []},  # Will be updated as pairs are shown
-                        color_map={},  # TODO: Add color mapping
-                        metadata_labels={}  # TODO: Add metadata labels
-                    )
-        except Exception as e:
-            log_error("Failed to load task", e)
-            QMessageBox.critical(self, "Error", f"Failed to load task: {str(e)}")
+
     
     def add_pair_widget(self):
         """Add a new pair widget to the layout at the top."""
@@ -770,11 +741,15 @@ class MainWindow(QMainWindow):
             if self.current_train_index < len(self.current_task['train']):
                 pair = self.current_task['train'][self.current_train_index]
                 pair_widget.set_grid_data(pair['input'], pair['output'], is_test=False)
+                # Store the actual pair label from the order map
+                pair_widget.pair_label = self.pending_order_map['train'][self.current_train_index]
         else:
             # Show test pair
             if self.current_test_index < len(self.current_task['test']):
                 pair = self.current_task['test'][self.current_test_index]
                 pair_widget.set_grid_data(pair['input'], pair['output'], is_test=True)
+                # Store the actual pair label from the order map
+                pair_widget.pair_label = self.pending_order_map['test'][self.current_test_index]
         
         # Ensure the new pair is visible by scrolling to the top
         self.centralWidget().findChild(QScrollArea).ensureWidgetVisible(pair_widget)
@@ -786,15 +761,26 @@ class MainWindow(QMainWindow):
             if self.pair_widgets:
                 current_widget = self.pair_widgets[0]  # Get the most recently added pair widget
                 thought_text = current_widget.get_thought_text()
-                if thought_text:
-                    pair_type = "test" if self.showing_test_pairs else "train"
-                    sequence_index = self.current_test_index if self.showing_test_pairs else self.current_train_index
-                    self.pending_thoughts.append({
-                        'pair_label': chr(97 + sequence_index),  # 'a', 'b', 'c', etc.
-                        'pair_type': pair_type,
-                        'sequence_index': sequence_index,
-                        'thought_text': thought_text
-                    })
+                pair_type = "test" if self.showing_test_pairs else "train"
+                # Store the current index before any changes
+                sequence_index = self.current_test_index if self.showing_test_pairs else self.current_train_index
+                
+                # Get the pair label from the widget (set in add_pair_widget)
+                pair_label = getattr(current_widget, 'pair_label', None)
+                if pair_label is None:
+                    # Fallback: get from order map
+                    if pair_type == "train":
+                        pair_label = self.pending_order_map['train'][sequence_index]
+                    else:
+                        pair_label = self.pending_order_map['test'][sequence_index]
+                
+                # Always store the thought, even if empty (allows for later editing)
+                self.pending_thoughts[sequence_index] = {
+                    'pair_label': pair_label,
+                    'pair_type': pair_type,
+                    'sequence_index': sequence_index,
+                    'thought_text': thought_text
+                }
             
             if not self.showing_test_pairs:
                 # Move to next training pair
@@ -835,24 +821,26 @@ class MainWindow(QMainWindow):
     def complete_solve(self):
         """Complete the current solve by saving all data to the database."""
         try:
-            # Create solve entry
+            # Create solve entry with actual start time
             self.current_solve_id = self.data_manager.create_solve(
                 task_id=self.pending_task_id,
                 order_map=self.pending_order_map,
                 order_map_type="default",
                 color_map=self.color_config,
-                metadata_labels=self.metadata_labels
+                metadata_labels=self.metadata_labels,
+                start_time=self.solve_start_time
             )
             
             # Save all pending thoughts
-            for thought in self.pending_thoughts:
-                self.data_manager.add_thought(
-                    solve_id=self.current_solve_id,
-                    pair_label=thought['pair_label'],
-                    pair_type=thought['pair_type'],
-                    sequence_index=thought['sequence_index'],
-                    thought_text=thought['thought_text']
-                )
+            for thought in self.pending_thoughts.values():
+                if thought['thought_text'].strip():  # Only save non-empty thoughts
+                    self.data_manager.add_thought(
+                        solve_id=self.current_solve_id,
+                        pair_label=thought['pair_label'],
+                        pair_type=thought['pair_type'],
+                        sequence_index=thought['sequence_index'],
+                        thought_text=thought['thought_text']
+                    )
             
             # Mark solve as complete
             self.data_manager.complete_solve(self.current_solve_id)
