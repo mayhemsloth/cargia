@@ -689,7 +689,26 @@ class MainWindow(QMainWindow):
             )
             self.pending_task_id = next_task["task_id"]
             self.pending_order_map = next_task["order_map"]
-            self.pending_thoughts = {}  # Reset pending thoughts
+            
+            # Pre-initialize pending_thoughts with all expected pairs
+            self.pending_thoughts = {}
+            # Initialize training pairs
+            for idx, pair_label in enumerate(self.pending_order_map['train']):
+                self.pending_thoughts[idx] = {
+                    'pair_label': pair_label,
+                    'pair_type': 'train',
+                    'sequence_index': idx,
+                    'thought_text': ''
+                }
+            # Initialize test pairs
+            for idx, pair_label in enumerate(self.pending_order_map['test']):
+                self.pending_thoughts[len(self.pending_order_map['train']) + idx] = {
+                    'pair_label': pair_label,
+                    'pair_type': 'test',
+                    'sequence_index': len(self.pending_order_map['train']) + idx,
+                    'thought_text': ''
+                }
+            
             self.solve_start_time = datetime.now()  # Record start time
             
             # Clear existing pairs
@@ -728,7 +747,6 @@ class MainWindow(QMainWindow):
             log_error("Failed to start new solve", e)
             QMessageBox.critical(self, "Error", f"Failed to start new solve: {str(e)}")
 
-    
     def add_pair_widget(self):
         """Add a new pair widget to the layout at the top."""
         pair_widget = PairWidget()
@@ -762,25 +780,17 @@ class MainWindow(QMainWindow):
                 current_widget = self.pair_widgets[0]  # Get the most recently added pair widget
                 thought_text = current_widget.get_thought_text()
                 pair_type = "test" if self.showing_test_pairs else "train"
-                # Store the current index before any changes
-                sequence_index = self.current_test_index if self.showing_test_pairs else self.current_train_index
                 
-                # Get the pair label from the widget (set in add_pair_widget)
-                pair_label = getattr(current_widget, 'pair_label', None)
-                if pair_label is None:
-                    # Fallback: get from order map
-                    if pair_type == "train":
-                        pair_label = self.pending_order_map['train'][sequence_index]
-                    else:
-                        pair_label = self.pending_order_map['test'][sequence_index]
+                # Calculate the correct sequence index
+                if self.showing_test_pairs:
+                    # For test pairs, add the length of train pairs to get the correct index
+                    sequence_index = len(self.pending_order_map['train']) + self.current_test_index
+                else:
+                    sequence_index = self.current_train_index
                 
-                # Always store the thought, even if empty (allows for later editing)
-                self.pending_thoughts[sequence_index] = {
-                    'pair_label': pair_label,
-                    'pair_type': pair_type,
-                    'sequence_index': sequence_index,
-                    'thought_text': thought_text
-                }
+                # Update the thought in our pre-initialized dictionary
+                if sequence_index in self.pending_thoughts:
+                    self.pending_thoughts[sequence_index]['thought_text'] = thought_text
             
             if not self.showing_test_pairs:
                 # Move to next training pair

@@ -1,7 +1,7 @@
 {
     "user": "Thomas",
-    "data_dir": "data/solves_and_thoughts",
-    "backup_dir": "data/solves_and_thoughts/backups",
+    "data_dir": "data/TEST_solves_and_thoughts",
+    "backup_dir": "data/TEST_solves_and_thoughts/backups",
     "source_folder": "data/arc_agi_2_reformatted",
     "order_map_type": "default",
     "transcription": {
