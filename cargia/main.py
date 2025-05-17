@@ -753,7 +753,7 @@ class MainWindow(QMainWindow):
         self.pairs_layout.insertWidget(0, pair_widget)  # Insert at the top
         self.pair_widgets.insert(0, pair_widget)  # Keep track of widgets in the same order
         
-        # Set grid data for the new pair
+        # Set grid data for the new pair and assign metadata
         if not self.showing_test_pairs:
             # Show training pair
             if self.current_train_index < len(self.current_task['train']):
@@ -761,6 +761,8 @@ class MainWindow(QMainWindow):
                 pair_widget.set_grid_data(pair['input'], pair['output'], is_test=False)
                 # Store the actual pair label from the order map
                 pair_widget.pair_label = self.pending_order_map['train'][self.current_train_index]
+                pair_widget.pair_type = 'train'
+                pair_widget.sequence_index = self.current_train_index
         else:
             # Show test pair
             if self.current_test_index < len(self.current_task['test']):
@@ -768,6 +770,8 @@ class MainWindow(QMainWindow):
                 pair_widget.set_grid_data(pair['input'], pair['output'], is_test=True)
                 # Store the actual pair label from the order map
                 pair_widget.pair_label = self.pending_order_map['test'][self.current_test_index]
+                pair_widget.pair_type = 'test'
+                pair_widget.sequence_index = len(self.pending_order_map['train']) + self.current_test_index
         
         # Ensure the new pair is visible by scrolling to the top
         self.centralWidget().findChild(QScrollArea).ensureWidgetVisible(pair_widget)
@@ -841,16 +845,16 @@ class MainWindow(QMainWindow):
                 start_time=self.solve_start_time
             )
             
-            # Save all pending thoughts
-            for thought in self.pending_thoughts.values():
-                if thought['thought_text'].strip():  # Only save non-empty thoughts
-                    self.data_manager.add_thought(
-                        solve_id=self.current_solve_id,
-                        pair_label=thought['pair_label'],
-                        pair_type=thought['pair_type'],
-                        sequence_index=thought['sequence_index'],
-                        thought_text=thought['thought_text']
-                    )
+            # Save the FINAL state of each pair's thought text
+            # pair_widgets[0] is the most recent/top, so reverse to get original order
+            for pair_widget in reversed(self.pair_widgets):
+                self.data_manager.add_thought(
+                    solve_id=self.current_solve_id,
+                    pair_label=getattr(pair_widget, 'pair_label', ''),
+                    pair_type=getattr(pair_widget, 'pair_type', ''),
+                    sequence_index=getattr(pair_widget, 'sequence_index', -1),
+                    thought_text=pair_widget.get_thought_text()
+                )
             
             # Mark solve as complete
             self.data_manager.complete_solve(self.current_solve_id)
