@@ -521,6 +521,84 @@ class DataManager:
             if 'conn' in locals():
                 conn.close()
     
+    def _calculate_duration(self, start_time: str, end_time: str) -> int:
+        """Calculate duration in seconds between two ISO format timestamps."""
+        try:
+            start = datetime.fromisoformat(start_time)
+            end = datetime.fromisoformat(end_time)
+            duration = (end - start).total_seconds()
+            return int(round(duration))
+        except Exception as e:
+            log_error("Failed to calculate duration", e)
+            return 0
+
+    def _format_duration(self, seconds: int) -> str:
+        """Format duration in seconds to 'Xm Ys' format."""
+        minutes = seconds // 60
+        remaining_seconds = seconds % 60
+        return f"{minutes}m {remaining_seconds}s"
+
+    def get_last_solve_duration(self) -> str:
+        """Get the duration of the last completed solve for the current user."""
+        if not self.current_user:
+            return "XXm XXs"
+            
+        try:
+            conn = sqlite3.connect(self.solves_db_path)
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                SELECT start_time, end_time
+                FROM solves
+                WHERE user_id = ? AND end_time IS NOT NULL
+                ORDER BY end_time DESC
+                LIMIT 1
+            """, (self.current_user,))
+            
+            row = cursor.fetchone()
+            if not row:
+                return "XXm XXs"
+                
+            duration = self._calculate_duration(row[0], row[1])
+            return self._format_duration(duration)
+            
+        except Exception as e:
+            log_error("Failed to get last solve duration", e)
+            return "XXm XXs"
+        finally:
+            if 'conn' in locals():
+                conn.close()
+
+    def get_average_solve_duration(self) -> str:
+        """Get the average duration of all completed solves for the current user."""
+        if not self.current_user:
+            return "XXm XXs"
+            
+        try:
+            conn = sqlite3.connect(self.solves_db_path)
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                SELECT start_time, end_time
+                FROM solves
+                WHERE user_id = ? AND end_time IS NOT NULL
+            """, (self.current_user,))
+            
+            rows = cursor.fetchall()
+            if not rows:
+                return "XXm XXs"
+                
+            total_duration = sum(self._calculate_duration(row[0], row[1]) for row in rows)
+            avg_duration = total_duration // len(rows)
+            return self._format_duration(avg_duration)
+            
+        except Exception as e:
+            log_error("Failed to get average solve duration", e)
+            return "XXm XXs"
+        finally:
+            if 'conn' in locals():
+                conn.close()
+    
     def set_order_map_type(self, order_map_type: str):
         """Set the order map type and save to settings."""
         if order_map_type not in ['default', 'random']:

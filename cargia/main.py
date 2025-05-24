@@ -431,6 +431,14 @@ class MainWindow(QMainWindow):
             self.task_name_label = QLabel("Task: None")
             info_layout.addWidget(self.task_name_label)
             
+            # Last solve duration
+            self.last_solve_label = QLabel("Last Solve: XXm XXs")
+            info_layout.addWidget(self.last_solve_label)
+            
+            # Average solve duration
+            self.avg_solve_label = QLabel("Avg Solve: XXm XXs")
+            info_layout.addWidget(self.avg_solve_label)
+            
             # Total solves count
             self.total_solves_label = QLabel("Total Solves: 0")
             info_layout.addWidget(self.total_solves_label)
@@ -615,7 +623,7 @@ class MainWindow(QMainWindow):
             if new_user and new_user != self.data_manager.current_user:
                 self.data_manager.set_current_user(new_user)
                 self.update_window_title()
-                self.update_total_solves_count()  # Update count when user changes
+                self.update_total_solves_count()  # This will also update duration statistics
                 QMessageBox.information(
                     self,
                     "User Updated",
@@ -666,6 +674,10 @@ class MainWindow(QMainWindow):
         """Update the total solves count display."""
         count = self.data_manager.get_total_solves_count()
         self.total_solves_label.setText(f"Total Solves: {count}")
+        
+        # Also update the duration statistics
+        self.last_solve_label.setText(f"Last Solve: {self.data_manager.get_last_solve_duration()}")
+        self.avg_solve_label.setText(f"Avg Solve: {self.data_manager.get_average_solve_duration()}")
     
     def start_new_solve(self):
         """Start a new solve by finding the next unsolved task."""
@@ -865,7 +877,7 @@ class MainWindow(QMainWindow):
             self.next_pair_btn.setEnabled(False)
             self.next_pair_action.setEnabled(False)
             
-            # Update total solves count
+            # Update statistics
             self.update_total_solves_count()
             
             QMessageBox.information(
