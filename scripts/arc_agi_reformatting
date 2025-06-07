@@ -1,0 +1,85 @@
+import os
+import json
+import string
+
+def pretty_json(obj, indent=2, level=0):
+    """
+    Recursively build a JSON string with:
+     - each 2D int-list (grid) printed row-by-row
+     - everything else either inline (for simple lists) or properly indented
+    """
+    space = ' ' * (level * indent)
+
+    if isinstance(obj, dict):
+        items = list(obj.items())
+        lines = [space + '{']
+        for idx, (k, v) in enumerate(items):
+            comma = ',' if idx < len(items) - 1 else ''
+            val_str = pretty_json(v, indent, level + 1)
+            lines.append(f"{space}{' ' * indent}\"{k}\": {val_str}{comma}")
+        lines.append(space + '}')
+        return '\n'.join(lines)
+
+    elif isinstance(obj, list):
+        # detect a grid: a non-empty list of int-lists all the same length
+        if (obj 
+            and all(isinstance(row, list) and row and all(isinstance(i, int) for i in row) 
+                    for row in obj)):
+            # pretty-print as multi-line grid
+            lines = [space + '[']
+            for i, row in enumerate(obj):
+                comma = ',' if i < len(obj) - 1 else ''
+                # row itself serialized inline
+                lines.append(f"{space}{' ' * indent}{json.dumps(row)}{comma}")
+            lines.append(space + ']')
+            return '\n'.join(lines)
+
+        # otherwise, use compact inline form
+        return json.dumps(obj)
+
+    else:
+        # primitives
+        return json.dumps(obj)
+
+def convert_arc_agi_tasks(input_dir, output_dir):
+    os.makedirs(output_dir, exist_ok=True)
+    labels = string.ascii_lowercase
+
+    for fname in os.listdir(input_dir):
+        if not fname.endswith('.json'):
+            continue
+
+        inp = os.path.join(input_dir, fname)
+        out = os.path.join(output_dir, fname)
+
+        with open(inp, 'r') as f:
+            original = json.load(f)
+
+        new = {'pairs': {}, 'default_splits': {'train': [], 'test': []}}
+        label_iter = iter(labels)
+
+        # train first
+        for pair in original.get('train', []):
+            lbl = next(label_iter)
+            new['pairs'][lbl] = pair
+            new['default_splits']['train'].append(lbl)
+
+        # then test
+        for pair in original.get('test', []):
+            lbl = next(label_iter)
+            new['pairs'][lbl] = pair
+            new['default_splits']['test'].append(lbl)
+
+        # write out with our pretty printer
+        with open(out, 'w') as f:
+            f.write(pretty_json(new, indent=2))
+
+        print(f"Converted {fname} → {out}")
+
+if __name__ == "__main__":
+    
+    INPUT_DIR = "data/arc_agi_2_source_data/training"
+    OUTPUT_DIR = "data/arc_agi_2_reformatted/training"
+    
+    convert_arc_agi_tasks(INPUT_DIR, OUTPUT_DIR)
+
