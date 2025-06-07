@@ -41,25 +41,10 @@ Key Responsibilities and Skills:
 
 Dependencies and Tools:
    - PyQt6 for the user interface.
-   - pandas, Pillow, and matplotlib for data handling and visualizing grid transformations.
+   - SQLite and Pillow for data handling and visualizing grid transformations.
    - Built-in json module for parsing ARC-AGI task files.
    - Optionally, SpeechRecognition and PyAudio for transcription.
    - pytest (or similar) for testing and debugging.
 
 Your objective is to build “Cargia” as a robust, extensible, and user-friendly data labeling GUI that not only organizes ARC-AGI puzzles but also enriches each task with detailed metadata and reasoning. Ensure that the tool is maintainable, scalable, and follows best coding practices to facilitate future enhancements and collaboration.
-
-
-Here’s the rough build plan for the Cargia application. 
-​
-2. Further customize the GUI to my liking. Some specific features I want to see:
-- Create a color mapping configuration that maps the numbers in the JSON file to colors when displaying the grid, and to record this color mapping configuration as part of the metadata for each individual task. This is important because later on I can do data augmentations and swap out the word colors that I say out loud (and which will be transcribed) into the number representations, and then insert a new color map and produce a whole new set of transformed pairs WITH correct corresponding reasoning data, thereby effectively teaching the model about color invariance in the tests. Likely I will adhere to the standard color mapping as seen on their website for all of it. 
-
-- Display the pairs one at a time and only show the next one when I have clicked a “Show next pair” button or a hotkey or something like that, which will then record the text (or transcribed text) for that pair into the reasoning sequence, and display the next pair. The test pair will be different, because I want to only show the input instead of both the input and output, so that I can do a reasoning trace while explaining how I would solve the problem, and then not actually need to click on the stuff to solve the problem (because the answers are already given to us). But the point is that this will be helpful during fine-tune training the model. I can give it the images (and corresponding JSON), then have it predict the reasoning trace, and then continue additional context, and then predict the reasoning trace, and then finally show it the final input and have it predict the reasoning trace and the final output. 
-
-- A metadata section that lets me toggle certain attributes about the entire task that will be useful in applying data augmentations later. Certain attributes could be things like:
--- Rotational invariance (all the puzzles’ interiors can be rotated the same amount and it wouldn’t affect deriving the correct transformation rule)
--- Horizontal flip invariance (all the puzzles’ interiors can be flipped horizontally and it wouldn’t affect deriving the correct transformation rule)
--- Vertical flip invariance (all the puzzles’ interiors can be flipped vertically and it wouldn’t affect deriving the correct transformation rule). 
--- Translation invariance (all the puzzles’ interiors can be translated some random amount (up to the edge) and it wouldn’t affect deriving the correct transformation rule)
--- World style (the puzzles heavily rely on “objects” being created with colors, and then also a background “medium” color in which those “objects” exist and move in.)
 

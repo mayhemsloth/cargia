@@ -8,10 +8,10 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                            QTextEdit, QScrollArea, QFrame, QSizePolicy, QTableWidget, QTableWidgetItem)
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor, QPalette, QTextCursor, QFont, QAction
-from grid_widget import GridWidget
-from data_manager import DataManager
+from cargia.grid_widget import GridWidget
+from cargia.data_manager import DataManager
 import os
-from transcription import TranscriptionManager
+from cargia.transcription import TranscriptionManager
 import sqlite3
 from datetime import datetime
 
