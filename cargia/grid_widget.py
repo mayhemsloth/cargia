@@ -3,7 +3,7 @@ from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QImage, QPixmap
 from PIL import Image
 import numpy as np
-from grid_utils import GridImageBuilder, ColorConfig
+from cargia.common.grid_image import GridImageBuilder, ColorConfig
 import traceback
 import os
 from datetime import datetime

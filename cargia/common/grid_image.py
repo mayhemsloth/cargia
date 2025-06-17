@@ -1,3 +1,6 @@
+"""
+Grid image generation utilities for both GUI and training.
+"""
 import json
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -12,7 +15,7 @@ class ColorConfig:
 
     def __init__(self, config_path: Optional[Path] = None):
         if not ColorConfig._config:
-            path = config_path or Path(__file__).parent / "color_config.json"
+            path = config_path or Path(__file__).parent.parent / "color_config.json"
             with path.open("r", encoding="utf-8") as f:
                 ColorConfig._config = json.load(f)
 
@@ -60,12 +63,13 @@ class GridImageBuilder:
             return self.medium_size
         return self.default_cell_size
 
-    def build(self, grid: List[List[int]]) -> Optional[Image.Image]:
+    def build(self, grid: List[List[int]], size_px: Optional[int] = None) -> Optional[Image.Image]:
         """
         Render a grid (list of list of ints) to a PIL Image.
 
         Args:
             grid: rectangular list of lists of ints
+            size_px: if provided, resize the output image to this size (maintaining aspect ratio)
         Returns:
             PIL.Image or None if grid is empty
         """
@@ -106,6 +110,18 @@ class GridImageBuilder:
                 color = self.color_config.get_color(symbol)
                 draw.rectangle([x1, y1, x2, y2], fill=color)
 
+        # Resize if requested
+        if size_px is not None:
+            # Calculate aspect ratio preserving dimensions
+            aspect = w / h
+            if aspect > 1:
+                new_w = size_px
+                new_h = int(size_px / aspect)
+            else:
+                new_h = size_px
+                new_w = int(size_px * aspect)
+            img = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+
         return img
 
 
@@ -118,6 +134,7 @@ def grid_to_image(
     config_path: Optional[str] = None,
     cell_size: int = 30,
     border_size: int = 1,
+    size_px: Optional[int] = None,
 ) -> Optional[Image.Image]:
     """
     Quick one-liner if you don't need full customization.
@@ -127,6 +144,7 @@ def grid_to_image(
         config_path: path to color_config.json (defaults to next to this file)
         cell_size: base size for each cell
         border_size: padding between cells
+        size_px: if provided, resize the output image to this size
     """
     cc = ColorConfig(Path(config_path)) if config_path else None
     builder = GridImageBuilder(
@@ -134,4 +152,4 @@ def grid_to_image(
         default_cell_size=cell_size,
         border_size=border_size,
     )
-    return builder.build(grid)
+    return builder.build(grid, size_px) 
