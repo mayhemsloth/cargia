@@ -133,11 +133,28 @@ class DataManager:
                     pair_type TEXT NOT NULL,
                     sequence_index INTEGER NOT NULL,
                     thought_text TEXT NOT NULL,
+                    cleaned_thought_text TEXT,
                     FOREIGN KEY (solve_id) REFERENCES solves(id)
                 )
             """)
             conn.commit()
             conn.close()
+        else:
+            # Check if we need to add the cleaned_thought_text column
+            conn = sqlite3.connect(self.thoughts_db_path)
+            cursor = conn.cursor()
+            try:
+                # Get table info
+                cursor.execute("PRAGMA table_info(thoughts)")
+                columns = {row[1] for row in cursor.fetchall()}
+                
+                # Add cleaned_thought_text column if needed
+                if 'cleaned_thought_text' not in columns:
+                    cursor.execute("ALTER TABLE thoughts ADD COLUMN cleaned_thought_text TEXT")
+                
+                conn.commit()
+            finally:
+                conn.close()
     
     def get_next_task(self) -> Optional[Dict]:
         """Get the next unsolved task with a unique order map."""
@@ -437,6 +454,62 @@ class DataManager:
         finally:
             conn.close()
     
+    def get_thought_by_id(self, thought_id: int) -> Optional[Dict]:
+        """Get a specific thought by its ID with all data including cleaned text."""
+        conn = sqlite3.connect(self.thoughts_db_path)
+        cursor = conn.cursor()
+        
+        try:
+            cursor.execute("""
+                SELECT id, solve_id, pair_label, pair_type, sequence_index, thought_text, cleaned_thought_text
+                FROM thoughts
+                WHERE id = ?
+            """, (thought_id,))
+            
+            row = cursor.fetchone()
+            if not row:
+                return None
+            
+            return {
+                'id': row[0],
+                'solve_id': row[1],
+                'pair_label': row[2],
+                'pair_type': row[3],
+                'sequence_index': row[4],
+                'thought_text': row[5],
+                'cleaned_thought_text': row[6]
+            }
+        finally:
+            conn.close()
+    
+    def get_all_thoughts_for_comparison(self) -> List[Dict]:
+        """Get all thoughts with their cleaned text for comparison."""
+        conn = sqlite3.connect(self.thoughts_db_path)
+        cursor = conn.cursor()
+        
+        try:
+            cursor.execute("""
+                SELECT id, solve_id, pair_label, pair_type, sequence_index, thought_text, cleaned_thought_text
+                FROM thoughts
+                WHERE thought_text IS NOT NULL AND thought_text != ''
+                ORDER BY id
+            """)
+            
+            thoughts = []
+            for row in cursor.fetchall():
+                thoughts.append({
+                    'id': row[0],
+                    'solve_id': row[1],
+                    'pair_label': row[2],
+                    'pair_type': row[3],
+                    'sequence_index': row[4],
+                    'thought_text': row[5],
+                    'cleaned_thought_text': row[6]
+                })
+            return thoughts
+        finally:
+            conn.close()
+    
     def get_solves_by_task(self, task_id: str) -> List[Dict]:
         """Get all solves for a specific task."""
         conn = sqlite3.connect(self.solves_db_path)
@@ -632,7 +705,7 @@ class DataManager:
             return {'train': [], 'test': []}
     
     def update_metadata_labels(self, solve_id: int, metadata_labels: Dict[str, bool]):
-        """Update the metadata labels for a solve."""
+        """Update metadata labels for a solve."""
         conn = sqlite3.connect(self.solves_db_path)
         cursor = conn.cursor()
         
@@ -644,4 +717,50 @@ class DataManager:
             """, (json.dumps(metadata_labels), solve_id))
             conn.commit()
         finally:
-            conn.close() 
+            conn.close()
+    
+    def run_text_cleaner(self, progress_callback=None):
+        """
+        Run the text cleaner to clean all thoughts that need cleaning.
+        
+        Args:
+            progress_callback: Optional callback function(processed, total) for progress updates
+            
+        Returns:
+            Dictionary with statistics about the cleaning process
+        """
+        from cargia.text_cleaner import TextCleaner
+        
+        cleaner = TextCleaner(self.data_dir)
+        cleaner.initialize_gemma()
+        
+        return cleaner.clean_all_thoughts(progress_callback)
+    
+    def run_text_cleaner_overwrite(self, progress_callback=None):
+        """
+        Run the text cleaner to clean all thoughts, overwriting existing cleaned text.
+        
+        Args:
+            progress_callback: Optional callback function(processed, total) for progress updates
+            
+        Returns:
+            Dictionary with statistics about the cleaning process
+        """
+        from cargia.text_cleaner import TextCleaner
+        
+        cleaner = TextCleaner(self.data_dir)
+        cleaner.initialize_gemma()
+        
+        return cleaner.clean_all_thoughts_overwrite(progress_callback)
+    
+    def get_text_cleaning_stats(self):
+        """
+        Get statistics about the cleaning status of thoughts.
+        
+        Returns:
+            Dictionary with cleaning statistics
+        """
+        from cargia.text_cleaner import TextCleaner
+        
+        cleaner = TextCleaner(self.data_dir)
+        return cleaner.get_cleaning_stats() 

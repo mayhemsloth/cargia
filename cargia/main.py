@@ -5,7 +5,8 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                            QHBoxLayout, QPushButton, QLabel, QFileDialog, 
                            QGridLayout, QGroupBox, QCheckBox, QMessageBox,
                            QMenuBar, QMenu, QDialog, QLineEdit, QDialogButtonBox,
-                           QTextEdit, QScrollArea, QFrame, QSizePolicy, QTableWidget, QTableWidgetItem)
+                           QTextEdit, QScrollArea, QFrame, QSizePolicy, QTableWidget, QTableWidgetItem,
+                           QProgressBar)
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor, QPalette, QTextCursor, QFont, QAction
 from cargia.grid_widget import GridWidget
@@ -173,6 +174,11 @@ class DatabaseViewerDialog(QDialog):
         self.setWindowTitle(f"View {table_name} Database")
         self.setMinimumSize(1000, 800)
         
+        # Store parameters
+        self.db_path = db_path
+        self.table_name = table_name
+        self.parent = parent
+        
         # Create layout
         layout = QVBoxLayout()
         
@@ -183,10 +189,37 @@ class DatabaseViewerDialog(QDialog):
         self.table.cellClicked.connect(self.handle_cell_click)
         layout.addWidget(self.table)
         
+        # Add buttons layout
+        buttons_layout = QHBoxLayout()
+        
+        # Add comparison button (only for thoughts table)
+        if table_name == "thoughts":
+            self.compare_btn = QPushButton("Compare Original vs Cleaned")
+            self.compare_btn.clicked.connect(self.show_text_comparison)
+            self.compare_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #2196F3;
+                    color: white;
+                    border: none;
+                    border-radius: 5px;
+                    font-size: 12px;
+                    font-weight: bold;
+                    padding: 8px 16px;
+                }
+                QPushButton:hover {
+                    background-color: #1976D2;
+                }
+            """)
+            buttons_layout.addWidget(self.compare_btn)
+        
+        buttons_layout.addStretch()  # Add spacer to push close button to the right
+        
         # Add close button
         close_btn = QPushButton("Close")
         close_btn.clicked.connect(self.accept)
-        layout.addWidget(close_btn)
+        buttons_layout.addWidget(close_btn)
+        
+        layout.addLayout(buttons_layout)
         
         self.setLayout(layout)
         
@@ -195,6 +228,19 @@ class DatabaseViewerDialog(QDialog):
         
         # Load data
         self.load_database(db_path, table_name)
+    
+    def show_text_comparison(self):
+        """Show the text comparison dialog."""
+        try:
+            # Get the data manager from the parent window
+            if hasattr(self.parent, 'data_manager'):
+                dialog = TextComparisonDialog(self.parent.data_manager, self)
+                dialog.exec()
+            else:
+                QMessageBox.warning(self, "Error", "Unable to access data manager for comparison.")
+        except Exception as e:
+            log_error("Failed to show text comparison dialog", e)
+            QMessageBox.critical(self, "Error", f"Failed to show text comparison: {str(e)}")
     
     def handle_cell_click(self, row, col):
         """Handle cell click to show JSON content in a modal dialog."""
@@ -336,6 +382,427 @@ class ColorSwatch(QFrame):
         
         # Create tooltip with name and number
         self.setToolTip(f"{name} ({number})")
+
+class TextCleanerDialog(QDialog):
+    """Dialog for choosing text cleaning options."""
+    
+    def __init__(self, data_manager, parent=None):
+        super().__init__(parent)
+        self.data_manager = data_manager
+        self.setWindowTitle("Text Cleaner")
+        self.setMinimumWidth(500)
+        self.setMinimumHeight(300)
+        
+        layout = QVBoxLayout()
+        
+        # Title and description
+        title_label = QLabel("Text Cleaner")
+        title_label.setFont(QFont('Arial', 16, QFont.Weight.Bold))
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(title_label)
+        
+        desc_label = QLabel("Choose how you want to clean the thought text in your database:")
+        desc_label.setWordWrap(True)
+        layout.addWidget(desc_label)
+        
+        # Statistics section
+        stats_group = QGroupBox("Current Status")
+        stats_layout = QVBoxLayout()
+        
+        # Get current statistics
+        stats = self.data_manager.get_text_cleaning_stats()
+        
+        stats_text = f"""
+        Total thoughts with text: {stats['total_thoughts']}
+        Already cleaned: {stats['cleaned_thoughts']}
+        Need cleaning: {stats['uncleaned_thoughts']}
+        """
+        
+        stats_label = QLabel(stats_text)
+        stats_label.setStyleSheet("font-family: monospace; background-color: #1b86c1; padding: 10px;")
+        stats_layout.addWidget(stats_label)
+        stats_group.setLayout(stats_layout)
+        layout.addWidget(stats_group)
+        
+        # Options section
+        options_group = QGroupBox("Cleaning Options")
+        options_layout = QVBoxLayout()
+        
+        # Option 1: Fill empty columns
+        self.fill_empty_btn = QPushButton("Fill Empty Columns")
+        self.fill_empty_btn.setMinimumHeight(50)
+        self.fill_empty_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+        """)
+        self.fill_empty_btn.clicked.connect(self.choose_fill_empty)
+        options_layout.addWidget(self.fill_empty_btn)
+        
+        # Option 2: Overwrite all
+        self.overwrite_btn = QPushButton("Overwrite All Rows")
+        self.overwrite_btn.setMinimumHeight(50)
+        self.overwrite_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #f44336;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #da190b;
+            }
+        """)
+        self.overwrite_btn.clicked.connect(self.choose_overwrite)
+        options_layout.addWidget(self.overwrite_btn)
+        
+        options_group.setLayout(options_layout)
+        layout.addWidget(options_group)
+        
+        # Cancel button
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.clicked.connect(self.reject)
+        layout.addWidget(cancel_btn)
+        
+        self.setLayout(layout)
+        
+        # Store the chosen option
+        self.chosen_option = None
+    
+    def choose_fill_empty(self):
+        """Choose to fill empty columns only."""
+        self.chosen_option = "fill_empty"
+        self.accept()
+    
+    def choose_overwrite(self):
+        """Choose to overwrite all rows."""
+        self.chosen_option = "overwrite"
+        self.accept()
+    
+    def get_chosen_option(self):
+        """Get the chosen cleaning option."""
+        return self.chosen_option
+
+class TextCleanerConfirmationDialog(QDialog):
+    """Confirmation dialog for text cleaning operations."""
+    
+    def __init__(self, option, data_manager, parent=None):
+        super().__init__(parent)
+        self.option = option
+        self.data_manager = data_manager
+        self.setWindowTitle("Confirm Text Cleaning")
+        self.setMinimumWidth(600)
+        self.setMinimumHeight(400)
+        
+        layout = QVBoxLayout()
+        
+        # Warning icon and title
+        title_label = QLabel("⚠️ Confirm Text Cleaning Operation ⚠️")
+        title_label.setFont(QFont('Arial', 16, QFont.Weight.Bold))
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title_label.setStyleSheet("color: #d32f2f;")
+        layout.addWidget(title_label)
+        
+        # Operation description
+        if option == "fill_empty":
+            desc_text = """
+            <b>Operation:</b> Fill Empty Columns<br><br>
+            This will clean all thought text entries that currently have no cleaned version.
+            Existing cleaned text will be preserved.
+            """
+        else:  # overwrite
+            desc_text = """
+            <b>Operation:</b> Overwrite All Rows<br><br>
+            This will clean ALL thought text entries, overwriting any existing cleaned text.
+            This operation cannot be undone!
+            """
+        
+        desc_label = QLabel(desc_text)
+        desc_label.setWordWrap(True)
+        desc_label.setStyleSheet("background-color: #c1ad1b; border: 1px solid #c1ad1b; padding: 15px; border-radius: 5px;")
+        layout.addWidget(desc_label)
+        
+        # Database path information
+        db_info_group = QGroupBox("Database Information")
+        db_layout = QVBoxLayout()
+        
+        db_path = self.data_manager.thoughts_db_path
+        db_text = f"""
+        <b>Database Path:</b><br>
+        {db_path}<br><br>
+        <b>Database Size:</b> {self._get_file_size(db_path)}
+        """
+        
+        db_label = QLabel(db_text)
+        db_label.setStyleSheet("font-family: monospace; background-color: #2d3748; color: white; padding: 10px; border-radius: 3px;")
+        db_layout.addWidget(db_label)
+        db_info_group.setLayout(db_layout)
+        layout.addWidget(db_info_group)
+        
+        # Statistics
+        stats_group = QGroupBox("Expected Impact")
+        stats_layout = QVBoxLayout()
+        
+        stats = self.data_manager.get_text_cleaning_stats()
+        if option == "fill_empty":
+            impact_text = f"""
+            <b>Thoughts to be cleaned:</b> {stats['uncleaned_thoughts']}<br>
+            <b>Already cleaned (will be preserved):</b> {stats['cleaned_thoughts']}<br>
+            <b>Total thoughts with text:</b> {stats['total_thoughts']}
+            """
+        else:  # overwrite
+            impact_text = f"""
+            <b>All thoughts to be cleaned:</b> {stats['total_thoughts']}<br>
+            <b>Existing cleaned text will be overwritten!</b>
+            """
+        
+        impact_label = QLabel(impact_text)
+        impact_label.setStyleSheet("background-color: #1b86c1; color: white; padding: 10px; border-radius: 3px;")
+        stats_layout.addWidget(impact_label)
+        stats_group.setLayout(stats_layout)
+        layout.addWidget(stats_group)
+        
+        # Confirmation checkbox
+        self.confirm_checkbox = QCheckBox("I understand the implications and want to proceed")
+        self.confirm_checkbox.stateChanged.connect(self.update_confirm_button)
+        layout.addWidget(self.confirm_checkbox)
+        
+        # Buttons
+        button_layout = QHBoxLayout()
+        
+        self.confirm_btn = QPushButton("Confirm and Proceed")
+        self.confirm_btn.setEnabled(False)
+        self.confirm_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #d32f2f;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                font-size: 14px;
+                font-weight: bold;
+                padding: 10px;
+            }
+            QPushButton:hover {
+                background-color: #b71c1c;
+            }
+            QPushButton:disabled {
+                background-color: #cccccc;
+                color: #666666;
+            }
+        """)
+        self.confirm_btn.clicked.connect(self.accept)
+        button_layout.addWidget(self.confirm_btn)
+        
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.clicked.connect(self.reject)
+        button_layout.addWidget(cancel_btn)
+        
+        layout.addLayout(button_layout)
+        
+        self.setLayout(layout)
+    
+    def _get_file_size(self, file_path):
+        """Get the size of a file in human-readable format."""
+        try:
+            if os.path.exists(file_path):
+                size_bytes = os.path.getsize(file_path)
+                if size_bytes < 1024:
+                    return f"{size_bytes} B"
+                elif size_bytes < 1024 * 1024:
+                    return f"{size_bytes / 1024:.1f} KB"
+                else:
+                    return f"{size_bytes / (1024 * 1024):.1f} MB"
+            else:
+                return "File not found"
+        except Exception:
+            return "Unknown"
+    
+    def update_confirm_button(self, state):
+        """Update the confirm button state based on checkbox."""
+        self.confirm_btn.setEnabled(state == Qt.CheckState.Checked.value)
+
+class ProgressDialog(QDialog):
+    """Dialog to show progress during text cleaning."""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Text Cleaning Progress")
+        self.setMinimumWidth(400)
+        self.setMinimumHeight(150)
+        self.setModal(True)
+        
+        layout = QVBoxLayout()
+        
+        # Progress label
+        self.progress_label = QLabel("Initializing...")
+        self.progress_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self.progress_label)
+        
+        # Progress bar
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setMinimum(0)
+        self.progress_bar.setMaximum(100)
+        self.progress_bar.setValue(0)
+        layout.addWidget(self.progress_bar)
+        
+        # Status label
+        self.status_label = QLabel("")
+        self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self.status_label)
+        
+        self.setLayout(layout)
+    
+    def update_progress(self, current, total):
+        """Update the progress bar and labels."""
+        if total > 0:
+            percentage = int((current / total) * 100)
+            self.progress_bar.setValue(percentage)
+            self.progress_label.setText(f"Processing: {current} / {total}")
+            self.status_label.setText(f"Progress: {percentage}%")
+        
+        # Process events to update the UI
+        QApplication.processEvents()
+    
+    def set_status(self, status_text):
+        """Set the status text."""
+        self.status_label.setText(status_text)
+        QApplication.processEvents()
+
+class TextComparisonDialog(QDialog):
+    """Dialog for comparing original vs cleaned thought text."""
+    
+    def __init__(self, data_manager, parent=None):
+        super().__init__(parent)
+        self.data_manager = data_manager
+        self.setWindowTitle("Text Comparison - Original vs Cleaned")
+        self.setMinimumSize(1200, 800)
+        
+        # Load all thoughts for comparison
+        self.thoughts = self.data_manager.get_all_thoughts_for_comparison()
+        self.current_index = 0
+        
+        layout = QVBoxLayout()
+        
+        # Header with navigation and status
+        header_layout = QHBoxLayout()
+        
+        # Navigation buttons
+        self.prev_btn = QPushButton("← Previous")
+        self.prev_btn.clicked.connect(self.show_previous)
+        header_layout.addWidget(self.prev_btn)
+        
+        # Current thought info
+        self.info_label = QLabel("No thoughts available")
+        self.info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        header_layout.addWidget(self.info_label)
+        
+        # Navigation buttons
+        self.next_btn = QPushButton("Next →")
+        self.next_btn.clicked.connect(self.show_next)
+        header_layout.addWidget(self.next_btn)
+        
+        layout.addLayout(header_layout)
+        
+        # Status indicator
+        self.status_label = QLabel("")
+        self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.status_label.setStyleSheet("font-weight: bold; padding: 5px; border-radius: 3px;")
+        layout.addWidget(self.status_label)
+        
+        # Text comparison area
+        comparison_layout = QHBoxLayout()
+        
+        # Original text panel
+        original_group = QGroupBox("Original Text")
+        original_layout = QVBoxLayout()
+        
+        self.original_text = QTextEdit()
+        self.original_text.setReadOnly(True)
+        self.original_text.setFont(QFont("Consolas", 10))
+        original_layout.addWidget(self.original_text)
+        
+        original_group.setLayout(original_layout)
+        comparison_layout.addWidget(original_group)
+        
+        # Cleaned text panel
+        cleaned_group = QGroupBox("Cleaned Text")
+        cleaned_layout = QVBoxLayout()
+        
+        self.cleaned_text = QTextEdit()
+        self.cleaned_text.setReadOnly(True)
+        self.cleaned_text.setFont(QFont("Consolas", 10))
+        cleaned_layout.addWidget(self.cleaned_text)
+        
+        cleaned_group.setLayout(cleaned_layout)
+        comparison_layout.addWidget(cleaned_group)
+        
+        layout.addLayout(comparison_layout)
+        
+        # Close button
+        close_btn = QPushButton("Close")
+        close_btn.clicked.connect(self.accept)
+        layout.addWidget(close_btn)
+        
+        self.setLayout(layout)
+        
+        # Initialize with first thought
+        if self.thoughts:
+            self.show_current_thought()
+        else:
+            self.info_label.setText("No thoughts found in database")
+            self.status_label.setText("No thoughts available")
+            self.status_label.setStyleSheet("background-color: #ffebee; color: #c62828; font-weight: bold; padding: 5px; border-radius: 3px;")
+    
+    def show_current_thought(self):
+        """Display the current thought."""
+        if not self.thoughts or self.current_index >= len(self.thoughts):
+            return
+        
+        thought = self.thoughts[self.current_index]
+        
+        # Update info label
+        self.info_label.setText(f"Thought {self.current_index + 1} of {len(self.thoughts)} (ID: {thought['id']})")
+        
+        # Update original text
+        self.original_text.setPlainText(thought['thought_text'] or "")
+        
+        # Update cleaned text
+        cleaned_text = thought['cleaned_thought_text'] or ""
+        self.cleaned_text.setPlainText(cleaned_text)
+        
+        # Update status indicator
+        if cleaned_text:
+            self.status_label.setText("✅ Cleaned text available")
+            self.status_label.setStyleSheet("background-color: #e8f5e8; color: #2e7d32; font-weight: bold; padding: 5px; border-radius: 3px;")
+        else:
+            self.status_label.setText("❌ No cleaned text available")
+            self.status_label.setStyleSheet("background-color: #ffebee; color: #c62828; font-weight: bold; padding: 5px; border-radius: 3px;")
+        
+        # Update navigation buttons
+        self.prev_btn.setEnabled(self.current_index > 0)
+        self.next_btn.setEnabled(self.current_index < len(self.thoughts) - 1)
+    
+    def show_previous(self):
+        """Show the previous thought."""
+        if self.current_index > 0:
+            self.current_index -= 1
+            self.show_current_thought()
+    
+    def show_next(self):
+        """Show the next thought."""
+        if self.current_index < len(self.thoughts) - 1:
+            self.current_index += 1
+            self.show_current_thought()
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -592,6 +1059,13 @@ class MainWindow(QMainWindow):
         data_dir_action = settings_menu.addAction("Data Directory...")
         data_dir_action.triggered.connect(self.show_settings_dialog)
         
+        # Add separator
+        settings_menu.addSeparator()
+        
+        # Run Text Cleaner action
+        run_text_cleaner_action = settings_menu.addAction("Run Text Cleaner...")
+        run_text_cleaner_action.triggered.connect(self.show_text_cleaner_dialog)
+        
         # Shortcuts menu
         shortcuts_menu = menu_bar.addMenu("Shortcuts")
         
@@ -652,6 +1126,64 @@ class MainWindow(QMainWindow):
                     "Settings Updated",
                     f"Data directory updated to: {new_data_dir}\nSource folder updated to: {new_source_folder}"
                 )
+    
+    def show_text_cleaner_dialog(self):
+        """Show the text cleaner dialog and handle the cleaning process."""
+        try:
+            # Show the main text cleaner dialog
+            dialog = TextCleanerDialog(self.data_manager, self)
+            if dialog.exec() == QDialog.DialogCode.Accepted:
+                chosen_option = dialog.get_chosen_option()
+                
+                if chosen_option is None:
+                    return
+                
+                # Show confirmation dialog
+                confirm_dialog = TextCleanerConfirmationDialog(chosen_option, self.data_manager, self)
+                if confirm_dialog.exec() == QDialog.DialogCode.Accepted:
+                    # Start the cleaning process
+                    self.run_text_cleaner(chosen_option)
+        
+        except Exception as e:
+            log_error("Failed to show text cleaner dialog", e)
+            QMessageBox.critical(self, "Error", f"Failed to show text cleaner dialog: {str(e)}")
+    
+    def run_text_cleaner(self, option):
+        """Run the text cleaner with the specified option."""
+        try:
+            # Create progress dialog
+            progress_dialog = ProgressDialog(self)
+            progress_dialog.show()
+            
+            # Define progress callback
+            def progress_callback(current, total):
+                progress_dialog.update_progress(current, total)
+            
+            # Run the appropriate cleaning method
+            if option == "fill_empty":
+                progress_dialog.set_status("Cleaning thoughts that need cleaning...")
+                results = self.data_manager.run_text_cleaner(progress_callback)
+            else:  # overwrite
+                progress_dialog.set_status("Cleaning all thoughts (overwrite mode)...")
+                results = self.data_manager.run_text_cleaner_overwrite(progress_callback)
+            
+            # Close progress dialog
+            progress_dialog.close()
+            
+            # Show results
+            message = f"""
+            Text cleaning completed!
+            
+            Total thoughts processed: {results['total_thoughts']}
+            Successfully cleaned: {results['cleaned_thoughts']}
+            Failed to clean: {results['failed_thoughts']}
+            """
+            
+            QMessageBox.information(self, "Text Cleaning Complete", message)
+            
+        except Exception as e:
+            log_error("Failed to run text cleaner", e)
+            QMessageBox.critical(self, "Error", f"Failed to run text cleaner: {str(e)}")
     
     def update_metadata_label(self, label, value):
         """Update a metadata label and save to database."""
