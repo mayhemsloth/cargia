@@ -804,6 +804,66 @@ class TextComparisonDialog(QDialog):
             self.current_index += 1
             self.show_current_thought()
 
+class UnsavedWorkDialog(QDialog):
+    """Confirmation dialog for unsaved work when starting a new solve."""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Unsaved Work Warning")
+        self.setMinimumWidth(500)
+        self.setMinimumHeight(200)
+        self.setModal(True)
+        
+        layout = QVBoxLayout()
+        
+        # Warning icon and title
+        title_label = QLabel("⚠️ Unsaved Work Detected ⚠️")
+        title_label.setFont(QFont('Arial', 16, QFont.Weight.Bold))
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title_label.setStyleSheet("color: #d32f2f;")
+        layout.addWidget(title_label)
+        
+        # Warning message
+        message_label = QLabel(
+            "You have unsaved thoughts in the current task. Starting a new solve will "
+            "permanently lose all your current work.\n\n"
+            "Are you sure you want to start a new solve?"
+        )
+        message_label.setWordWrap(True)
+        message_label.setStyleSheet("background-color: #ff4444; border: 1px solid #ff9800; padding: 15px; border-radius: 5px;")
+        layout.addWidget(message_label)
+        
+        # Buttons
+        button_layout = QHBoxLayout()
+        
+        # Cancel button (default)
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.clicked.connect(self.reject)
+        button_layout.addWidget(cancel_btn)
+        
+        # Continue button (dangerous)
+        continue_btn = QPushButton("Start New Solve Anyway")
+        continue_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #d32f2f;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                font-size: 14px;
+                font-weight: bold;
+                padding: 10px;
+            }
+            QPushButton:hover {
+                background-color: #b71c1c;
+            }
+        """)
+        continue_btn.clicked.connect(self.accept)
+        button_layout.addWidget(continue_btn)
+        
+        layout.addLayout(button_layout)
+        
+        self.setLayout(layout)
+
 class MainWindow(QMainWindow):
     def __init__(self):
         try:
@@ -1211,9 +1271,37 @@ class MainWindow(QMainWindow):
         self.last_solve_label.setText(f"Last Solve: {self.data_manager.get_last_solve_duration()}")
         self.avg_solve_label.setText(f"Avg Solve: {self.data_manager.get_average_solve_duration()}")
     
+    def has_unsaved_work(self):
+        """Check if there is unsaved work in the current task."""
+        # If no task is loaded, there's no unsaved work
+        if self.current_task is None:
+            return False
+        
+        # If a solve has been completed (saved to database), there's no unsaved work
+        if self.current_solve_id is not None:
+            return False
+        
+        # Check if there are any thoughts with text in the pending_thoughts
+        for thought_data in self.pending_thoughts.values():
+            if thought_data.get('thought_text', '').strip():
+                return True
+        
+        # Check if there are any thoughts in the current pair widgets
+        for pair_widget in self.pair_widgets:
+            if pair_widget.get_thought_text().strip():
+                return True
+        
+        return False
+    
     def start_new_solve(self):
         """Start a new solve by finding the next unsolved task."""
         try:
+            # Check for unsaved work and show confirmation if needed
+            if self.has_unsaved_work():
+                dialog = UnsavedWorkDialog(self)
+                if dialog.exec() != QDialog.DialogCode.Accepted:
+                    return  # User cancelled
+            
             # Get next task with unique order map
             next_task = self.data_manager.get_next_task()
             if next_task is None:
@@ -1411,6 +1499,21 @@ class MainWindow(QMainWindow):
             
             # Update statistics
             self.update_total_solves_count()
+            
+            # Reset state to indicate solve is complete and saved
+            self.current_task = None
+            self.current_task_path = None
+            self.pending_task_id = None
+            self.pending_order_map = None
+            self.pending_thoughts = {}
+            self.current_solve_id = None
+            self.solve_start_time = None
+            
+            # Update task name to show no task
+            self.task_name_label.setText("Task: None")
+            
+            # Disable metadata buttons
+            self.enable_metadata_buttons(False)
             
             QMessageBox.information(
                 self,
