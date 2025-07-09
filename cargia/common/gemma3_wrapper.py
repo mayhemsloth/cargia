@@ -203,7 +203,7 @@ class Gemma3Wrapper:
         
         content = []
 
-        # images, when provided, are always put into the contentbefore the text
+        # images, when provided, are always put into the content before the text
         if image is not None:   
             content.append({"type": "image", "image": image})
 
