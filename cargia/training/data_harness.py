@@ -16,12 +16,12 @@ from cargia.training.config import TrainingConfig
 from cargia.training.augment import CharacterInvariance, ColorInvariance, SpatialTransforms
 from cargia.common.grid_image import GridImageBuilder
 
-""" USAGE EXAMPLE (in a different Python file)
+""" USAGE EXAMPLE (used in a different Python file)
 from cargia.training.data_harness import TaskDataset
 from cargia.training.config import TrainingConfig
 
 # Load tasks from database
-tasks = load_tasks_from_database()
+tasks = load_tasks_from_database() # STILL NEED TO IMPLEMENT THIS
 
 # Create datasets
 config = TrainingConfig()
