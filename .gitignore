@@ -2,3 +2,4 @@ data/
 cargia_venv/
 *.pyc
 cargia.egg-info/
+runs/

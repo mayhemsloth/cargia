@@ -69,6 +69,10 @@ def test_solve_loader():
         print("\nTesting SolveData functionality...")
         test_solve_data(all_solves[0])
         
+        # Test pretty_print functionality
+        print("\nTesting pretty_print functionality...")
+        test_pretty_print(all_solves[0])
+        
         # Print summary statistics
         print("\n" + "="*50)
         print("SUMMARY STATISTICS")
@@ -127,6 +131,43 @@ def test_solve_data(solve_data: SolveData):
         print(f"    Default splits: {solve_data.raw_task['default_splits']}")
     
     print("  ✓ SolveData tests passed")
+
+
+def test_pretty_print(solve_data: SolveData):
+    """Test the pretty_print functionality."""
+    print("  Testing pretty_print method...")
+    
+    # Test compact version first (without grids and thoughts)
+    print("\n" + "="*60)
+    print("COMPACT PRETTY PRINT (no grids, no thoughts)")
+    print("="*60)
+    compact_output = solve_data.pretty_print(include_grids=False, include_thoughts=False)
+    print(compact_output)
+    
+    # Test version with grids but no thoughts
+    print("\n" + "="*60)
+    print("PRETTY PRINT WITH GRIDS (no thoughts)")
+    print("="*60)
+    grid_output = solve_data.pretty_print(include_grids=True, include_thoughts=False, max_grid_size=8)
+    print(grid_output)
+    
+    # Test full version (if thoughts exist)
+    train_thoughts = solve_data.get_thoughts_by_pair_type('train')
+    test_thoughts = solve_data.get_thoughts_by_pair_type('test')
+    has_thoughts = any(thought.strip() for thought in train_thoughts + test_thoughts)
+    
+    if has_thoughts:
+        print("\n" + "="*60)
+        print("FULL PRETTY PRINT (with grids and thoughts)")
+        print("="*60)
+        full_output = solve_data.pretty_print(include_grids=True, include_thoughts=True, max_grid_size=8)
+        print(full_output)
+    else:
+        print("\n" + "="*60)
+        print("SKIPPING FULL PRETTY PRINT (no thoughts available)")
+        print("="*60)
+    
+    print("  ✓ pretty_print tests completed")
 
 
 def print_summary_statistics(solves: list):

@@ -24,7 +24,7 @@ class Gemma3Wrapper:
         model_id: str = "google/gemma-3-4b-it",
         device_map: str = "auto",
         torch_dtype: torch.dtype = torch.bfloat16,
-        max_new_tokens: int = 200,
+        max_new_tokens: int = 4096,
         do_sample: bool = False,
         temperature: float = 1.0,
         top_p: float = 1.0,

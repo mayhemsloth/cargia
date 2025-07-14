@@ -17,7 +17,6 @@ from datetime import datetime
 
 from cargia.data_manager import log_error
 
-
 class SolveData:
     """
     Complete representation of a solved ARC-AGI task with all associated metadata.
@@ -44,6 +43,10 @@ class SolveData:
         self.train_pairs = train_pairs
         self.test_pairs = test_pairs
         self.difficulty_score = None  # Will be calculated later
+        self._proxy_difficulty_scores = None  # Cache for individual scores
+        
+        # Calculate proxy difficulty score automatically during initialization
+        self.calculate_proxy_difficulty_score()
     
     def get_all_pairs(self) -> List[Dict]:
         """Get all pairs (train + test) in sequence."""
@@ -79,6 +82,425 @@ class SolveData:
     
     def __repr__(self) -> str:
         return f"SolveData(task_id='{self.task_id}', user='{self.solve_metadata.get('user_id', 'unknown')}', train_pairs={len(self.train_pairs)}, test_pairs={len(self.test_pairs)})"
+    
+    def pretty_print(self, include_grids: bool = True, include_thoughts: bool = True, max_grid_size: int = 10) -> str:
+        """
+        Create a detailed, formatted string representation of all SolveData information.
+        
+        Args:
+            include_grids: Whether to include the actual grid data (can be large)
+            include_thoughts: Whether to include the thought text (can be long)
+            max_grid_size: Maximum grid size to display (truncate larger grids)
+            
+        Returns:
+            Formatted string with all SolveData information
+        """
+        lines = []
+        lines.append("=" * 80)
+        lines.append(f"SOLVE DATA: {self.task_id}")
+        lines.append("=" * 80)
+        
+        # Basic information
+        lines.append("\n📋 BASIC INFORMATION")
+        lines.append("-" * 40)
+        lines.append(f"Task ID: {self.task_id}")
+        lines.append(f"User ID: {self.solve_metadata.get('user_id', 'unknown')}")
+        lines.append(f"Order Map Type: {self.solve_metadata.get('order_map_type', 'unknown')}")
+        lines.append(f"Train Pairs: {len(self.train_pairs)}")
+        lines.append(f"Test Pairs: {len(self.test_pairs)}")
+        
+        # Timing information
+        duration = self.get_solve_duration_seconds()
+        if duration:
+            lines.append(f"Solve Duration: {duration} seconds ({duration//60}m {duration%60}s)")
+        else:
+            lines.append("Solve Duration: Unknown (missing start/end time)")
+        
+        lines.append(f"Start Time: {self.solve_metadata.get('start_time', 'unknown')}")
+        lines.append(f"End Time: {self.solve_metadata.get('end_time', 'unknown')}")
+        
+        # Order map
+        order_map = self.solve_metadata.get('order_map', {})
+        lines.append(f"Order Map: {order_map}")
+        
+        # Color map
+        color_map = self.solve_metadata.get('color_map', {})
+        if color_map:
+            lines.append(f"Color Map: {color_map}")
+        else:
+            lines.append("Color Map: None")
+        
+        # Metadata labels
+        metadata_labels = self.solve_metadata.get('metadata_labels', {})
+        if metadata_labels:
+            lines.append(f"Metadata Labels: {metadata_labels}")
+        else:
+            lines.append("Metadata Labels: None")
+        
+        # Raw task information
+        lines.append("\n📄 RAW TASK INFORMATION")
+        lines.append("-" * 40)
+        if 'default_splits' in self.raw_task:
+            lines.append(f"Default Splits: {self.raw_task['default_splits']}")
+        if 'pairs' in self.raw_task:
+            lines.append(f"Total Pairs in Raw Task: {len(self.raw_task['pairs'])}")
+            lines.append("Available Pair Labels: " + ", ".join(sorted(self.raw_task['pairs'].keys())))
+        
+        # Training pairs
+        if self.train_pairs:
+            lines.append("\n🎯 TRAINING PAIRS")
+            lines.append("-" * 40)
+            for i, pair in enumerate(self.train_pairs):
+                lines.append(f"\nTraining Pair {i+1} (Label: {pair['pair_label']}):")
+                lines.append(f"  Sequence Index: {pair['sequence_index']}")
+                
+                if include_grids:
+                    input_grid = pair['input']
+                    output_grid = pair['output']
+                    
+                    # Truncate large grids
+                    if len(input_grid) > max_grid_size or (input_grid and len(input_grid[0]) > max_grid_size):
+                        lines.append(f"  Input Grid: {len(input_grid)}x{len(input_grid[0]) if input_grid else 0} (truncated)")
+                    else:
+                        lines.append("  Input Grid:")
+                        for row in input_grid:
+                            lines.append(f"    {row}")
+                    
+                    if len(output_grid) > max_grid_size or (output_grid and len(output_grid[0]) > max_grid_size):
+                        lines.append(f"  Output Grid: {len(output_grid)}x{len(output_grid[0]) if output_grid else 0} (truncated)")
+                    else:
+                        lines.append("  Output Grid:")
+                        for row in output_grid:
+                            lines.append(f"    {row}")
+                else:
+                    lines.append(f"  Input Grid: {len(pair['input'])}x{len(pair['input'][0]) if pair['input'] else 0}")
+                    lines.append(f"  Output Grid: {len(pair['output'])}x{len(pair['output'][0]) if pair['output'] else 0}")
+                
+                if include_thoughts:
+                    thought_text = pair.get('thought_text', '')
+                    cleaned_thought = pair.get('cleaned_thought_text', '')
+                    
+                    if thought_text:
+                        lines.append(f"  Thought Text: {repr(thought_text)}")
+                    else:
+                        lines.append("  Thought Text: (empty)")
+                    
+                    if cleaned_thought and cleaned_thought != thought_text:
+                        lines.append(f"  Cleaned Thought: {repr(cleaned_thought)}")
+                else:
+                    thought_length = len(pair.get('thought_text', ''))
+                    cleaned_length = len(pair.get('cleaned_thought_text', ''))
+                    lines.append(f"  Thought Text Length: {thought_length} chars")
+                    lines.append(f"  Cleaned Thought Length: {cleaned_length} chars")
+        
+        # Test pairs
+        if self.test_pairs:
+            lines.append("\n🧪 TEST PAIRS")
+            lines.append("-" * 40)
+            for i, pair in enumerate(self.test_pairs):
+                lines.append(f"\nTest Pair {i+1} (Label: {pair['pair_label']}):")
+                lines.append(f"  Sequence Index: {pair['sequence_index']}")
+                
+                if include_grids:
+                    input_grid = pair['input']
+                    output_grid = pair['output']
+                    
+                    # Truncate large grids
+                    if len(input_grid) > max_grid_size or (input_grid and len(input_grid[0]) > max_grid_size):
+                        lines.append(f"  Input Grid: {len(input_grid)}x{len(input_grid[0]) if input_grid else 0} (truncated)")
+                    else:
+                        lines.append("  Input Grid:")
+                        for row in input_grid:
+                            lines.append(f"    {row}")
+                    
+                    if len(output_grid) > max_grid_size or (output_grid and len(output_grid[0]) > max_grid_size):
+                        lines.append(f"  Output Grid: {len(output_grid)}x{len(output_grid[0]) if output_grid else 0} (truncated)")
+                    else:
+                        lines.append("  Output Grid:")
+                        for row in output_grid:
+                            lines.append(f"    {row}")
+                else:
+                    lines.append(f"  Input Grid: {len(pair['input'])}x{len(pair['input'][0]) if pair['input'] else 0}")
+                    lines.append(f"  Output Grid: {len(pair['output'])}x{len(pair['output'][0]) if pair['output'] else 0}")
+                
+                if include_thoughts:
+                    thought_text = pair.get('thought_text', '')
+                    cleaned_thought = pair.get('cleaned_thought_text', '')
+                    
+                    if thought_text:
+                        lines.append(f"  Thought Text: {repr(thought_text)}")
+                    else:
+                        lines.append("  Thought Text: (empty)")
+                    
+                    if cleaned_thought and cleaned_thought != thought_text:
+                        lines.append(f"  Cleaned Thought: {repr(cleaned_thought)}")
+                else:
+                    thought_length = len(pair.get('thought_text', ''))
+                    cleaned_length = len(pair.get('cleaned_thought_text', ''))
+                    lines.append(f"  Thought Text Length: {thought_length} chars")
+                    lines.append(f"  Cleaned Thought Length: {cleaned_length} chars")
+        
+        # Difficulty score (if available)
+        if self.difficulty_score is not None:
+            lines.append("\n📊 PROXY DIFFICULTY ANALYSIS")
+            lines.append("-" * 40)
+            lines.append(f"Final Proxy Difficulty Score: {self.difficulty_score:.3f}")
+            
+            if self._proxy_difficulty_scores:
+                lines.append("\nIndividual Attribute Scores:")
+                lines.append(f"  Training Pairs Count: {self._proxy_difficulty_scores['training_pairs_count']}")
+                lines.append(f"  Average Grid Size: {self._proxy_difficulty_scores['average_grid_size']:.1f}")
+                lines.append(f"  Average Unique Colors: {self._proxy_difficulty_scores['average_unique_colors']:.1f}")
+                lines.append(f"  Grid Variability: {self._proxy_difficulty_scores['grid_variability']:.3f} (placeholder)")
+                lines.append(f"  Average Thought Length: {self._proxy_difficulty_scores['average_thought_length']:.1f}")
+                lines.append(f"  Size Consistency: {self._proxy_difficulty_scores['size_consistency']:.3f}")
+        else:
+            lines.append("\n📊 PROXY DIFFICULTY ANALYSIS")
+            lines.append("-" * 40)
+            lines.append("Proxy difficulty score not calculated yet.")
+            lines.append("Call calculate_proxy_difficulty_score() to compute.")
+        
+        lines.append("\n" + "=" * 80)
+        return "\n".join(lines)
+    
+    def _calculate_training_pairs_count(self) -> int:
+        """Calculate attribute 1: Total number of training pairs."""
+        return len(self.train_pairs)
+    
+    def _calculate_average_grid_size(self) -> float:
+        """Calculate attribute 2: Average tile size (rows × columns) of training grids."""
+        if not self.train_pairs:
+            return 0.0
+        
+        total_size = 0
+        total_grids = 0
+        
+        for pair in self.train_pairs:
+            # Input grid size
+            input_grid = pair['input']
+            if input_grid:
+                total_size += len(input_grid) * len(input_grid[0])
+                total_grids += 1
+            
+            # Output grid size
+            output_grid = pair['output']
+            if output_grid:
+                total_size += len(output_grid) * len(output_grid[0])
+                total_grids += 1
+        
+        return total_size / total_grids if total_grids > 0 else 0.0
+    
+    def _calculate_average_unique_colors(self) -> float:
+        """Calculate attribute 3: Average number of unique colors/characters in training grids."""
+        if not self.train_pairs:
+            return 0.0
+        
+        total_unique_colors = 0
+        total_grids = 0
+        
+        for pair in self.train_pairs:
+            # Input grid unique colors
+            input_grid = pair['input']
+            if input_grid:
+                unique_colors = set()
+                for row in input_grid:
+                    for cell in row:
+                        unique_colors.add(cell)
+                total_unique_colors += len(unique_colors)
+                total_grids += 1
+            
+            # Output grid unique colors
+            output_grid = pair['output']
+            if output_grid:
+                unique_colors = set()
+                for row in output_grid:
+                    for cell in row:
+                        unique_colors.add(cell)
+                total_unique_colors += len(unique_colors)
+                total_grids += 1
+        
+        return total_unique_colors / total_grids if total_grids > 0 else 0.0
+    
+    def _calculate_grid_variability(self) -> float:
+        """Calculate attribute 4: Measure of grid 'smoothness' vs 'chaoticness'."""
+        # TODO: Implement grid variability calculation
+        # For now, return a placeholder value
+        return 0.0
+    
+    def _calculate_average_thought_length(self) -> float:
+        """Calculate attribute 5: Average character length of training thoughts."""
+        if not self.train_pairs:
+            return 0.0
+        
+        total_length = 0
+        total_thoughts = 0
+        
+        for pair in self.train_pairs:
+            thought_text = pair.get('thought_text', '')
+            if thought_text:
+                total_length += len(thought_text)
+                total_thoughts += 1
+        
+        return total_length / total_thoughts if total_thoughts > 0 else 0.0
+    
+    def _calculate_size_consistency(self) -> float:
+        """Calculate attribute 6: Proportion of pairs with same input/output grid sizes."""
+        if not self.train_pairs:
+            return 0.0
+        
+        consistent_pairs = 0
+        total_pairs = 0
+        
+        for pair in self.train_pairs:
+            input_grid = pair['input']
+            output_grid = pair['output']
+            
+            if input_grid and output_grid:
+                input_rows, input_cols = len(input_grid), len(input_grid[0])
+                output_rows, output_cols = len(output_grid), len(output_grid[0])
+                
+                # Check if input and output grids have the same dimensions
+                if input_rows == output_rows and input_cols == output_cols:
+                    consistent_pairs += 1
+                total_pairs += 1
+        
+        return consistent_pairs / total_pairs if total_pairs > 0 else 0.0
+    
+    def calculate_proxy_difficulty_score(self, weights: Optional[Dict[str, float]] = None) -> Dict[str, float]:
+        """
+        Calculate a proxy difficulty score based on various task characteristics.
+        
+        This method analyzes the task data to estimate difficulty based on:
+        1. Number of training pairs (more pairs = easier to understand pattern)
+        2. Average grid size (larger grids = more complex)
+        3. Average number of unique colors (more colors = more complex)
+        4. Grid size variability (inconsistent sizes = more complex)
+        5. Average thought length (longer thoughts = more complex reasoning)
+        6. Size consistency between input/output (inconsistent = more complex)
+        
+        Args:
+            weights: Optional dictionary to weight different factors differently
+            
+        Returns:
+            Dictionary with individual scores and weighted total
+        """
+        # Default weights (all factors equally important)
+        default_weights = {
+            'training_pairs_count': 1.0,
+            'average_grid_size': 1.0,
+            'average_unique_colors': 1.0,
+            'grid_variability': 1.0,
+            'average_thought_length': 1.0,
+            'size_consistency': 1.0
+        }
+        
+        if weights:
+            default_weights.update(weights)
+        
+        # Calculate individual scores
+        scores = {
+            'training_pairs_count': self._calculate_training_pairs_count(),
+            'average_grid_size': self._calculate_average_grid_size(),
+            'average_unique_colors': self._calculate_average_unique_colors(),
+            'grid_variability': self._calculate_grid_variability(),
+            'average_thought_length': self._calculate_average_thought_length(),
+            'size_consistency': self._calculate_size_consistency()
+        }
+        
+        # Calculate weighted total
+        weighted_total = sum(scores[key] * default_weights[key] for key in scores)
+        
+        # Store results
+        self._proxy_difficulty_scores = {
+            'individual_scores': scores,
+            'weights': default_weights,
+            'weighted_total': weighted_total
+        }
+        
+        return self._proxy_difficulty_scores
+    
+    def to_data_harness_format(self, use_cleaned_thoughts: bool = True) -> Dict:
+        """
+        Convert SolveData to the format expected by DataHarness.create_training_conversation().
+        
+        Args:
+            use_cleaned_thoughts: Whether to use cleaned_thought_text (True) or thought_text (False)
+            
+        Returns:
+            Dictionary in the format expected by DataHarness:
+            {
+                "train": [
+                    {
+                        "input": List[List[int]],
+                        "output": List[List[int]], 
+                        "thoughts": str
+                    },
+                    ...
+                ],
+                "test": [
+                    {
+                        "input": List[List[int]],
+                        "output": List[List[int]],
+                        "thoughts": str
+                    },
+                    ...
+                ]
+            }
+            
+        Note: Pairs are sorted by sequence_index to preserve the exact order in which they
+        were presented during data collection. The sequence_index does not reset between
+        train and test pairs - it starts at 0 and increments across all pairs.
+        """
+        # Choose which thought field to use
+        thought_field = 'cleaned_thought_text' if use_cleaned_thoughts else 'thought_text'
+        
+        # Combine all pairs and sort by sequence_index to preserve original order
+        all_pairs = []
+        
+        # Add train pairs with their sequence_index
+        for pair in self.train_pairs:
+            all_pairs.append({
+                'input': pair['input'],
+                'output': pair['output'],
+                'thoughts': pair.get(thought_field, '') or pair.get('thought_text', ''),
+                'sequence_index': pair['sequence_index'],
+                'pair_type': 'train'
+            })
+        
+        # Add test pairs with their sequence_index
+        for pair in self.test_pairs:
+            all_pairs.append({
+                'input': pair['input'],
+                'output': pair['output'],
+                'thoughts': pair.get(thought_field, '') or pair.get('thought_text', ''),
+                'sequence_index': pair['sequence_index'],
+                'pair_type': 'test'
+            })
+        
+        # Sort by sequence_index to preserve original presentation order
+        all_pairs.sort(key=lambda x: x['sequence_index'])
+        
+        # Separate back into train and test based on pair_type
+        train_pairs = []
+        test_pairs = []
+        
+        for pair in all_pairs:
+            # Remove the temporary fields we added for sorting
+            formatted_pair = {
+                'input': pair['input'],
+                'output': pair['output'],
+                'thoughts': pair['thoughts']
+            }
+            
+            if pair['pair_type'] == 'train':
+                train_pairs.append(formatted_pair)
+            else:  # pair_type == 'test'
+                test_pairs.append(formatted_pair)
+        
+        return {
+            'train': train_pairs,
+            'test': test_pairs
+        }
 
 
 class SolveLoader:

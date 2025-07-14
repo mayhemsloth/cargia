@@ -12,7 +12,7 @@ from typing import Dict, List, Optional, Tuple
 import json
 from PIL import Image
 
-from cargia.training.config import TrainingConfig
+from cargia.training.training_config import TrainingConfig
 from cargia.training.augment import CharacterInvariance, ColorInvariance, SpatialTransforms
 from cargia.common.grid_image import GridImageBuilder
 
@@ -58,11 +58,36 @@ class DataHarness:
         Create a complete conversation sequence for one task.
         
         Args:
-            task: Raw task data with 'train' and 'test' pairs
+            task (Dict): Raw task data with 'train' and 'test', each with a list of pairs of "input" and "output" grids and "thoughts" strings
+            task = {
+                "train": [
+                    {
+                        "input": List[List[int]],  # 2D grid of integers (0-9 typically)
+                        "output": List[List[int]], # 2D grid of integers (0-9 typically)
+                        "thoughts": str            # Ground truth reasoning text
+                    },
+                    # ... more training pairs
+                ],
+                "test": [
+                    {
+                        "input": List[List[int]],  # 2D grid of integers (0-9 typically)
+                        "output": List[List[int]], # 2D grid of integers (0-9 typically)
+                        "thoughts": str            # Ground truth reasoning text
+                    },
+                    # ... more test pairs
+                ]
+            }
             is_training: Whether this is for training (augmentations applied) or validation
             
         Returns:
             List of message dictionaries formatted for Gemma3
+        
+        Note: If you have SolveData objects from SolveLoader, you can convert them to this format
+        using the to_data_harness_format() method:
+        
+        solve_data = SolveLoader(...).load_all_solves()[0]
+        task = solve_data.to_data_harness_format(use_cleaned_thoughts=True)
+        conversation = data_harness.create_training_conversation(task)
         """
         # Apply augmentations to entire task if training
         if is_training:
@@ -263,45 +288,3 @@ class AugmentationPipeline:
         # by passing the color_map to GridImageBuilder
         
         return augmented_pair
-
-
-class TaskDataset:
-    """
-    Dataset class for loading and preprocessing ARC-AGI tasks.
-    
-    Handles the complete pipeline from raw task data to model-ready
-    conversation sequences.
-    """
-    
-    def __init__(self, tasks: List[Dict], config: TrainingConfig, is_training: bool = True):
-        """
-        Initialize the task dataset.
-        
-        Args:
-            tasks: List of raw task data from database
-            config: Training configuration
-            is_training: Whether this is for training or validation
-        """
-        self.tasks = tasks
-        self.config = config
-        self.is_training = is_training
-        self.data_harness = DataHarness(config)
-        
-    def __len__(self) -> int:
-        """Return the number of tasks in the dataset."""
-        return len(self.tasks)
-    
-    def __getitem__(self, idx: int) -> List[Dict]:
-        """
-        Get a complete conversation sequence for one task.
-        
-        Args:
-            idx: Task index
-            
-        Returns:
-            List of message dictionaries formatted for Gemma3
-        """
-        return self.data_harness.create_training_conversation(
-            self.tasks[idx], 
-            is_training=self.is_training
-        ) 
