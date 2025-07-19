@@ -3,24 +3,25 @@ from typing import Dict, Iterable, List
 from datasets import IterableDataset
 from cargia.training.data_harness import DataHarness 
 from cargia.training.training_config import TrainingConfig
+from cargia.training.solve_loader import SolveData
 
 class TaskDatasetBuilder:
     """
-    Lazily turns a list of raw ARC-AGI tasks into a HuggingFace Dataset whose
+    Lazily turns a list of SolveData objects into a HuggingFace Dataset whose
     rows are *already* tokenised for Gemma-3 (or any other multimodal processor).
     """
 
     def __init__(
         self,
-        raw_tasks: List[Dict],
+        solve_data_list: List[SolveData],
         processor,                         # Gemma3Processor / AutoProcessor
         config: TrainingConfig,
         is_training: bool = True,
     ):
-        self.raw_tasks   = raw_tasks
-        self.processor   = processor
-        self.harness     = DataHarness(config)
-        self.is_training = is_training
+        self.solve_data_list = solve_data_list
+        self.processor       = processor
+        self.harness         = DataHarness(config)
+        self.is_training     = is_training
 
     # -------------------------------------------------
     # 1️⃣  generator that HF will call under the hood
@@ -31,9 +32,9 @@ class TaskDatasetBuilder:
         SFTTrainer expects (`input_ids`, `attention_mask`, optionally
         `pixel_values`, etc., depending on the processor).
         """
-        for task in self.raw_tasks:
+        for solve_data in self.solve_data_list:
             messages = self.harness.create_training_conversation(
-                task, is_training=self.is_training
+                solve_data, is_training=self.is_training
             )
 
             # Processor does text + images in one call

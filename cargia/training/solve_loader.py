@@ -17,6 +17,64 @@ from datetime import datetime
 
 from cargia.data_manager import log_error
 
+class AugmentAndTokenise:
+    """ Class version to simplify the creation of a transformation method in conjunction with the HuggingFace Dataset's .with_transform method
+    Note that the calling of the class IS THE FUNCTION to be passed into .with_transform method.
+    """
+    def __init__(self, harness, processor, is_training: bool = True):
+        self.harness   = harness
+        self.processor = processor
+        self.is_training = is_training
+
+    def __call__(self, example):
+
+        if isinstance(example["task_raw"], dict):
+            task = SolveData(**example.pop("task_raw")) # task variable is a SolveData object
+        else:
+            task = example.pop("task_raw") # task variable is a SolveData object
+
+        # ➊ random augmentation on **raw text**
+        conv  = self.harness.create_training_conversation(task, is_training=self.is_training)
+
+        # ➋ chat-template command that mimics the Google tutorial
+        text  = self.processor.apply_chat_template(
+                    conv, tokenize=False, add_generation_prompt=False).strip()
+
+        # ➌ extracting images in order from the conversation, mimicking the Google tutorial
+        imgs  = [part["image"]
+                 for msg in conv
+                 for part in msg.get("content", [])
+                 if isinstance(part, dict) and part.get("type") == "image"]
+
+        # ➍ processor → tensors, mimicking the Google tutorial
+        enc   = self.processor(text=text,
+                               images=imgs,
+                               padding="max_length",
+                               truncation=True,
+                               max_length=8192,
+                               return_tensors="pt")
+
+        # ➎ label mask (same as Google tutorial)
+        labels          = enc["input_ids"].clone()
+        pad_id          = self.processor.tokenizer.pad_token_id
+        boi_id          = self.processor.tokenizer.convert_tokens_to_ids(self.processor.tokenizer.special_tokens_map["boi_token"])
+        labels[(labels == pad_id) | (labels == boi_id) | (labels == 262144)] = -100
+
+        # # --- NEW: mask user-role tokens ----------------------------
+        # user_role_ids = self.processor.tokenizer.convert_tokens_to_ids("<|user|>")  # adjust to your template
+        # mask_until_assistant = False
+        # for i, tok in enumerate(enc["input_ids"]):
+        #     if tok == user_role_ids:
+        #         mask_until_assistant = True
+        #     elif tok == self.processor.tokenizer.convert_tokens_to_ids("<|assistant|>"):
+        #         mask_until_assistant = False
+        #     if mask_until_assistant:
+        #         labels[i] = -100
+        # # -----------------------------------------------------------
+
+        enc["labels"] = labels
+        return {k: v.squeeze(0) for k, v in enc.items()}
+    
 class SolveData:
     """
     Complete representation of a solved ARC-AGI task with all associated metadata.
@@ -26,7 +84,7 @@ class SolveData:
     """
     
     def __init__(self, task_id: str, raw_task: Dict, solve_metadata: Dict, 
-                 train_pairs: List[Dict], test_pairs: List[Dict]):
+                 train_pairs: List[Dict], test_pairs: List[Dict], **kwargs):
         """
         Initialize SolveData with all components.
         
@@ -44,6 +102,7 @@ class SolveData:
         self.test_pairs = test_pairs
         self.difficulty_score = None  # Will be calculated later
         self._proxy_difficulty_scores = None  # Cache for individual scores
+        self.kwargs = kwargs
         
         # Calculate proxy difficulty score automatically during initialization
         self.calculate_proxy_difficulty_score()
@@ -79,6 +138,37 @@ class SolveData:
             return int((end - start).total_seconds())
         except (ValueError, TypeError):
             return None
+        
+    def get_color_map(self) -> Dict:
+        """Get the color map for the task."""
+        return self.solve_metadata.get('color_map', {})
+    
+    def get_order_map(self) -> Dict:
+        """Get the order map for the task."""
+        return self.solve_metadata.get('order_map', {})
+    
+    def to_dict(self) -> Dict:
+        """
+        Convert the SolveData object to a Python dictionary.
+        
+        This method dumps all class attributes into a dictionary, preserving
+        the structure of nested dictionaries and lists. This is useful for
+        serialization, debugging, or when you need to work with the data
+        in a dictionary format.
+        
+        Returns:
+            Dictionary containing all SolveData attributes with their current values
+        """
+        return {
+            'task_id': self.task_id,
+            'raw_task': self.raw_task,
+            'solve_metadata': self.solve_metadata,
+            'train_pairs': self.train_pairs,
+            'test_pairs': self.test_pairs,
+            'difficulty_score': self.difficulty_score,
+            '_proxy_difficulty_scores': self._proxy_difficulty_scores
+        }
+    
     
     def __repr__(self) -> str:
         return f"SolveData(task_id='{self.task_id}', user='{self.solve_metadata.get('user_id', 'unknown')}', train_pairs={len(self.train_pairs)}, test_pairs={len(self.test_pairs)})"

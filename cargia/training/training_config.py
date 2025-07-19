@@ -25,13 +25,12 @@ class TrainingConfig:
     # Model configuration
     start_checkpoint_path: str = "C:\\Users\\thomas\\proj\\arcagi\\local_data\\model_weights\\gemma3-4b-it-ORIGINAL" # if None, will start from scratch
     
-
     # Loss weights
     grid_loss_weight: float = 1.0  # λ in the loss equation
     intermediate_weight: float = 0.0  # α for intermediate supervision
     
     # Data augmentation flags
-    use_any_augmentation: bool = True
+    use_any_augmentation: bool = False
     use_color_invariance: bool = True
     use_char_invariance: bool = True
     use_spatial_aug: bool = False
