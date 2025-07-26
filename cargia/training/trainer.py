@@ -27,6 +27,8 @@ from datetime import datetime
 from peft import LoraConfig
 from datasets import Dataset
 from functools import partial
+import numpy as np
+import json
 
 class CargiaGoogleGemma3Trainer:
     """
@@ -93,6 +95,10 @@ class CargiaGoogleGemma3Trainer:
         self.train_collate = partial(self._arc_collate, is_training=True)
         self.eval_collate  = partial(self._arc_collate, is_training=False)
         
+        # build analysis collate functions
+        self.train_analyze_collate = partial(self._arc_collate, is_training=True, analyze_mode=True)
+        self.eval_analyze_collate = partial(self._arc_collate, is_training=False, analyze_mode=True)
+        
         peft_config = LoraConfig(
             lora_alpha=16,
             lora_dropout=0.05,
@@ -150,6 +156,142 @@ class CargiaGoogleGemma3Trainer:
             # callbacks          = [AugmentSwitchCallback(self.train_collate, self.eval_collate)]
         )
 
+    def analyze_dataset(self, max_samples=None):
+        """
+        Analyze token lengths for both train and eval datasets.
+        
+        Args:
+            max_samples: If provided, only analyze this many samples (for quick testing)
+        """
+        print("=== Analyzing Training Dataset ===")
+        train_lengths = self._analyze_split(self.raw_train_ds, self.train_analyze_collate, "train", max_samples)
+        
+        print("\n=== Analyzing Evaluation Dataset ===")
+        eval_lengths = self._analyze_split(self.raw_eval_ds, self.eval_analyze_collate, "eval", max_samples)
+        
+        # Combine statistics
+        all_lengths = train_lengths + eval_lengths
+        
+        # Calculate overall statistics
+        overall_stats = self._calculate_statistics(all_lengths, "overall")
+        
+        # Save detailed results
+        results = {
+            "train": self._calculate_statistics(train_lengths, "train"),
+            "eval": self._calculate_statistics(eval_lengths, "eval"),
+            "overall": overall_stats,
+            "timestamp": datetime.now().isoformat(),
+            "config": {
+                "data_dir": self.config.data_dir,
+                "source_folder": self.config.source_folder,
+                "start_checkpoint_path": self.config.start_checkpoint_path,
+                "max_samples_analyzed": max_samples
+            }
+        }
+        
+        # Save to file
+        output_file = f"token_length_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        with open(output_file, 'w') as f:
+            json.dump(results, f, indent=2)
+        
+        print(f"\n=== Analysis Complete ===")
+        print(f"Results saved to: {output_file}")
+        
+        return results
+    
+    def _analyze_split(self, dataset, collate_fn, split_name, max_samples=None):
+        """
+        Analyze a specific dataset split.
+        """
+        if max_samples:
+            dataset = dataset.select(range(min(max_samples, len(dataset))))
+        
+        print(f"Analyzing {len(dataset)} samples from {split_name} dataset...")
+        
+        all_lengths = []
+        batch_size = 1  # Process one at a time to avoid memory issues
+        
+        for i in range(0, len(dataset), batch_size):
+            batch = dataset.select(range(i, min(i + batch_size, len(dataset))))
+            batch_dict = [{"task_raw": item["task_raw"]} for item in batch]
+            
+            try:
+                lengths = collate_fn(batch_dict)
+                all_lengths.extend(lengths)
+                
+                if (i + batch_size) % 100 == 0 or i + batch_size >= len(dataset):
+                    print(f"  Processed {min(i + batch_size, len(dataset))}/{len(dataset)} samples")
+                    
+            except Exception as e:
+                print(f"  Error processing batch starting at index {i}: {e}")
+                continue
+        
+        return all_lengths
+    
+    def _calculate_statistics(self, lengths, split_name):
+        """
+        Calculate comprehensive statistics for a list of token lengths.
+        """
+        if not lengths:
+            return {"error": "No valid lengths found"}
+        
+        lengths = np.array(lengths)
+        
+        stats = {
+            "count": len(lengths),
+            "mean": float(np.mean(lengths)),
+            "median": float(np.median(lengths)),
+            "std": float(np.std(lengths)),
+            "min": int(np.min(lengths)),
+            "max": int(np.max(lengths)),
+            "percentiles": {
+                "25": float(np.percentile(lengths, 25)),
+                "50": float(np.percentile(lengths, 50)),
+                "75": float(np.percentile(lengths, 75)),
+                "90": float(np.percentile(lengths, 90)),
+                "95": float(np.percentile(lengths, 95)),
+                "99": float(np.percentile(lengths, 99)),
+            }
+        }
+        
+        # Print summary
+        print(f"\n{split_name.upper()} DATASET STATISTICS:")
+        print(f"  Count: {stats['count']}")
+        print(f"  Mean: {stats['mean']:.1f} tokens")
+        print(f"  Median: {stats['median']:.1f} tokens")
+        print(f"  Std Dev: {stats['std']:.1f} tokens")
+        print(f"  Min: {stats['min']} tokens")
+        print(f"  Max: {stats['max']} tokens")
+        print(f"  95th percentile: {stats['percentiles']['95']:.1f} tokens")
+        print(f"  99th percentile: {stats['percentiles']['99']:.1f} tokens")
+        
+        return stats
+    
+    def estimate_memory_requirements(self, stats, batch_size=1):
+        """
+        Estimate memory requirements based on token length statistics.
+        """
+        print(f"\n=== MEMORY ESTIMATION (batch_size={batch_size}) ===")
+        
+        # Rough estimation: each token requires ~2 bytes in bfloat16
+        bytes_per_token = 2
+        
+        # Calculate for different scenarios
+        scenarios = {
+            "mean": stats["overall"]["mean"],
+            "median": stats["overall"]["median"],
+            "95th_percentile": stats["overall"]["percentiles"]["95"],
+            "99th_percentile": stats["overall"]["percentiles"]["99"],
+            "max": stats["overall"]["max"]
+        }
+        
+        for scenario, token_length in scenarios.items():
+            memory_mb = (token_length * batch_size * bytes_per_token) / (1024 * 1024)
+            print(f"  {scenario}: {token_length:.0f} tokens → ~{memory_mb:.1f} MB per batch")
+        
+        print(f"\n  Note: This is a rough estimate. Actual memory usage will be higher")
+        print(f"  due to model parameters, gradients, optimizer states, etc.")
+
     def process_vision_info(self, messages):
         """Helper from the Gemma tutorial: returns list[Image.Image] in <boi> order."""
         imgs = []
@@ -159,7 +301,7 @@ class CargiaGoogleGemma3Trainer:
                     imgs.append(part["image"])
         return imgs
     
-    def _arc_collate(self, examples, *,is_training: bool):
+    def _arc_collate(self, examples, *, is_training: bool, analyze_mode: bool = False):
         texts, images = [], []
 
         for ex in examples:
@@ -178,16 +320,50 @@ class CargiaGoogleGemma3Trainer:
             txt = self.processor.apply_chat_template(
                     conv, add_generation_prompt=False, tokenize=False).strip()
             texts.append(txt)
-            print(txt)
+            # print(txt)
 
             # ➌  collect PIL images matching <boi> tokens
             images.append(self.process_vision_info(conv))
 
-        # ➍  processor → tensors
-        batch = self.processor(text=texts, 
-                               images=images,
-                               return_tensors="pt",
-                               padding=True)
+        # If in analyze mode, return token lengths instead of full batch
+        if analyze_mode:
+            token_lengths = []
+            for i, text in enumerate(texts):
+                # Process with images if available (same as training)
+                if len(images) > 0 and i < len(images):
+                    batch = self.processor(
+                        text=[text],
+                        images=images[i],
+                        return_tensors="pt",
+                        padding=False,  # No padding to get true length
+                        truncation=False,  # No truncation to get true length
+                        add_special_tokens=True
+                    )
+                else:
+                    batch = self.processor(
+                        text=[text],
+                        return_tensors="pt",
+                        padding=False,  # No padding to get true length
+                        truncation=False,  # No truncation to get true length
+                        add_special_tokens=True
+                    )
+                token_lengths.append(batch["input_ids"].shape[1])
+            return token_lengths
+
+        # ➍  processor → tensors (normal training mode)
+        if len(images) > 0:
+            batch = self.processor(text=texts, 
+                                images=images,
+                                return_tensors="pt",
+                                padding=True,
+                                truncation=True,
+                                max_length=4096)
+        else:
+            batch = self.processor(text=texts,
+                                return_tensors="pt",
+                                padding=True,
+                                truncation=True,
+                                max_length=4096)
 
         # ➎  label masking (same as Google tutorial)
         labels = batch["input_ids"].clone()
