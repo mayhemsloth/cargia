@@ -19,10 +19,6 @@ def main():
     print("Initializing trainer...")
     trainer = CargiaGoogleGemma3Trainer(TRAINING_CONFIG)
     
-    # Analyze with a sample first (for quick testing)
-    print("\n=== Quick Sample Analysis ===")
-    sample_results = trainer.analyze_dataset(max_samples=10)
-    
     # Ask user if they want to analyze the full dataset
     response = input("\nDo you want to analyze the full dataset? This may take a while. (y/n): ")
     
@@ -32,9 +28,6 @@ def main():
         
         # Estimate memory requirements
         trainer.estimate_memory_requirements(full_results)
-    else:
-        print("Full dataset analysis skipped.")
-        trainer.estimate_memory_requirements(sample_results)
     
     print("===== Token Length Analysis Completed =====")
 

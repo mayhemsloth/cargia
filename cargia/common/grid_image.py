@@ -39,7 +39,8 @@ class GridImageBuilder:
         color_config: Optional[ColorConfig] = None,
         *,
         default_cell_size: int = 30,
-        border_size: int = 2,
+        border_size: int = 1,
+        border_color: Tuple[int, int, int] = (245, 245, 245),
         small_threshold: int = 10,
         medium_threshold: int = 15,
         small_size: int = 20,
@@ -54,6 +55,7 @@ class GridImageBuilder:
         self.small_size = small_size
         self.medium_size = medium_size
         self.large_size = large_size
+        self.border_color = border_color
 
     def _choose_cell_size(self, rows: int, cols: int) -> int:
         max_dim = max(rows, cols)
@@ -84,28 +86,30 @@ class GridImageBuilder:
                 raise ValueError("All rows in the grid must have the same length")
 
         cell_size = self._choose_cell_size(rows, cols)
-        w = cols * (cell_size + self.border_size) - self.border_size
-        h = rows * (cell_size + self.border_size) - self.border_size
+        # Include borders on all sides (outer edges)
+        w = cols * cell_size + (cols + 1) * self.border_size
+        h = rows * cell_size + (rows + 1) * self.border_size
 
-        # Create image with white background
-        img = Image.new("RGB", (w, h), (255, 255, 255))
+        # Create image with border color background
+        img = Image.new("RGB", (w, h), self.border_color)
         draw = ImageDraw.Draw(img)
 
-        # Draw grid lines
-        for i in range(rows + 1):
-            y = i * (cell_size + self.border_size)
-            draw.line([(0, y), (w, y)], fill=(255, 255, 255), width=self.border_size)
-        for j in range(cols + 1):
-            x = j * (cell_size + self.border_size)
-            draw.line([(x, 0), (x, h)], fill=(255, 255, 255), width=self.border_size)
+        # # Draw grid lines (including outer border)
+        # # Adjust positions to account for line width to avoid double-thick edges
+        # for i in range(rows + 1):
+        #     y = i * (cell_size + self.border_size) + self.border_size // 2
+        #     draw.line([(0, y), (w, y)], fill=self.border_color, width=self.border_size)
+        # for j in range(cols + 1):
+        #     x = j * (cell_size + self.border_size) + self.border_size // 2
+        #     draw.line([(x, 0), (x, h)], fill=self.border_color, width=self.border_size)
 
         # Fill cells with colors
         for y, row in enumerate(grid):
             for x, symbol in enumerate(row):
-                x1 = x * (cell_size + self.border_size)
-                y1 = y * (cell_size + self.border_size)
-                x2 = x1 + cell_size
-                y2 = y1 + cell_size
+                x1 = x * (cell_size + self.border_size) + self.border_size
+                y1 = y * (cell_size + self.border_size) + self.border_size
+                x2 = x1 + cell_size - 1  # PIL rectangle is inclusive, so subtract 1
+                y2 = y1 + cell_size - 1  # PIL rectangle is inclusive, so subtract 1
 
                 color = self.color_config.get_color(symbol)
                 draw.rectangle([x1, y1, x2, y2], fill=color)
