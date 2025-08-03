@@ -44,6 +44,16 @@ class DataHarness:
     sequences, including task-level augmentations and proper message formatting
     for Gemma3 multi-turn training.
     """
+
+    SYSTEM_PROMPT = (
+            "You are an AI assistant solving ARC-AGI puzzles. "
+            "You will be shown training pairs with input and output grids, "
+            "followed by test pairs with only input grids. "
+            "Analyze the patterns in the training pairs to understand the transformation rule that dictates the output grid from the input grid, "
+            "then apply those rules to predict the output grid for test pairs. "
+            "Express your reasoning clearly during the training pairs and the test pairs. "
+            "When requested for the output grid for the test pairs, provide your predictions in JSON response format. "
+    )
     
     def __init__(self, config: TrainingConfig):
         """
@@ -93,14 +103,7 @@ class DataHarness:
     
     def _format_system_message(self, solve_metadata: Dict) -> Dict:
         """Format the system prompt message."""
-        system_prompt = (
-            "You are an AI assistant solving ARC-AGI puzzles. "
-            "You will be shown training pairs with input and output grids, "
-            "followed by test pairs with only input grids. "
-            "Analyze the patterns in the training pairs to understand the transformation rules, "
-            "then apply those rules to predict the output for test pairs. "
-            "Express your reasoning clearly and provide your predictions in JSON format. "
-        )
+        system_prompt = self.SYSTEM_PROMPT
 
         def _format_color_map(color_map: Dict) -> str:
             color_map_str = ""
@@ -153,7 +156,7 @@ class DataHarness:
         content = [
             {"type": "text", "text": f"This is test pair {pair_idx + 1}, so you'll only get the input grid image and text. "
                                    f"Respond with a text description of your thoughts and then I'll follow-up with another message"
-                                   f"for your JSON response which should be the output of this test grid."},
+                                   f"for your response which should be the output grid of this test pair in JSON response format."},
             {"type": "text", "text": f"Input grid: {json.dumps(pair['input'])}"},
             {"type": "image", "image": self.image_builder.build(pair['input'])}
         ]
@@ -171,8 +174,8 @@ class DataHarness:
             Formatted user message for Gemma3
         """
         content = [
-            {"type": "text", "text": f"Referencing specifically your comments on test pair {pair_idx + 1} and all your other thoughts leading up to it, "
-                                     f"respond now with ONLY the correct output grid for test pair {pair_idx + 1} in JSON format."}
+            {"type": "text", "text": f"Using specifically your comments on test pair {pair_idx + 1} and all your other reasoning thoughts leading up to it, "
+                                     f"respond now with ONLY the correct output grid for test pair {pair_idx + 1} in JSON response format."}
         ]
         return {"role": "user", "content": content}
     
