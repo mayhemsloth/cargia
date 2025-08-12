@@ -83,6 +83,7 @@ class CargiaGoogleGemma3Trainer:
         solves= SolveLoader(config.data_dir, config.source_folder).load_all_solves() # a list of SolveData objects
         if self.config.verbose: print(f"{len(solves)} SolveData objects loaded")
         
+        # split into train and eval sets
         train_solves, eval_solves = train_test_split(solves, test_size=0.2, random_state=1234)
         if self.config.verbose: print(f"{len(train_solves)} train solves and {len(eval_solves)} eval solves")
         
@@ -136,7 +137,7 @@ class CargiaGoogleGemma3Trainer:
                 dataset_text_field=None,     # need a dummy field for collator
                 dataset_kwargs={"skip_prepare_dataset": True},  # important for collator
                 gradient_checkpointing_kwargs={
-                    "use_reentrant": True
+                    "use_reentrant": False
                 },  # use reentrant checkpointing
             )
 
@@ -761,10 +762,9 @@ class CargiaGoogleGemma3Trainer:
             txt = self.processor.apply_chat_template(
                     conv,
                     add_generation_prompt=False,
-                    return_assistant_tokens_mask=assistant_only_loss,
                     tokenize=False).strip()
+            print(txt)
             texts.append(txt)
-            # print(txt)
 
             # ➌  collect PIL images matching <boi> tokens
             images.append(self.process_vision_info(conv))
@@ -814,6 +814,9 @@ class CargiaGoogleGemma3Trainer:
         pad_id = self.processor.tokenizer.pad_token_id
         boi_id = self.processor.tokenizer.convert_tokens_to_ids(self.processor.tokenizer.special_tokens_map["boi_token"])
         labels[(labels == pad_id) | (labels == boi_id) | (labels == 262144)] = -100
+
+        # TODO: add proper handling of assistant_only_loss by identifying the tokens for <start_of_turn>user and then subsequent tokens until <end_of_turn>
+        
         batch["labels"] = labels
 
         return batch
@@ -839,11 +842,10 @@ if __name__ == "__main__":
     
     # Debug grid token identification
     if TRAINING_CONFIG.verbose:
-        print("----Debugging grid token identification----")
-        trainer.debug_grid_token_identification(max_samples=3)
+        trainer.debug_grid_token_identification(max_samples=1)
         
         print("----Testing custom loss function----")
-        trainer.test_custom_loss_function(num_samples=2)
+        trainer.test_custom_loss_function(num_samples=1)
     
     print("----Training starting----")
     trainer.sft_trainer.train()

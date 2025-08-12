@@ -20,7 +20,7 @@ class TrainingConfig:
     start_checkpoint_path: str = "C:\\Users\\thomas\\proj\\arcagi\\local_data\\model_weights\\gemma3-4b-it-ORIGINAL" # if None, will start from scratch
     
     # Loss weights
-    assistant_only_loss: bool = False
+    assistant_only_loss: bool = True
     grid_loss_weight: float = 10.0  # Weight multiplier for grid output tokens (higher = more emphasis on grid accuracy)
     binary_grid_loss_weight: float = 50.0  # Weight multiplier for binary grid accuracy (all-or-nothing penalty)
     binary_loss_type: str = "exponential"  # Type of binary loss: "exponential", "sigmoid", "threshold"
