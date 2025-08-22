@@ -1,0 +1,4 @@
+2025-08-22 09:39:18,726 - INFO - Loaded configuration from configs/step_1_overfit_single.json
+2025-08-22 09:39:18,726 - INFO - Configuration validation passed
+2025-08-22 09:39:52,768 - INFO - Loaded configuration from configs/step_2_overfit_eight.json
+2025-08-22 09:39:52,769 - INFO - Configuration validation passed

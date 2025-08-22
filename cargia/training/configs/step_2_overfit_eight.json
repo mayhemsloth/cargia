@@ -1,0 +1,58 @@
+{
+  "name": "step_2_overfit_eight",
+  "description": "Overfit to eight training data points - further ensures core training code loop works",
+  "training": {
+    "verbose": true,
+    "device": "cuda",
+    "data_dir": "data/solves_and_thoughts",
+    "source_folder": "data/arc_agi_2_reformatted",
+    "start_checkpoint_path": "C:\\Users\\thomas\\proj\\arcagi\\local_data\\model_weights\\gemma3-4b-it-ORIGINAL",
+    "assistant_only_loss": true,
+    "grid_loss_weight": 10.0,
+    "binary_grid_loss_weight": 50.0,
+    "binary_loss_type": "exponential",
+    "binary_loss_sensitivity": 10.0,
+    "use_bitsnbytes": false
+  },
+  "augmentation": {
+    "use_any_augmentation": false,
+    "use_color_invariance": false,
+    "use_char_invariance": false,
+    "use_spatial_aug": false,
+    "use_grid_loss": true
+  },
+  "training_args": {
+    "num_train_epochs": 1,
+    "max_steps": 200,
+    "learning_rate": 2e-4,
+    "per_device_train_batch_size": 1,
+    "per_device_eval_batch_size": 1,
+    "gradient_accumulation_steps": 1,
+    "save_strategy": "steps",
+    "save_steps": 100,
+    "eval_steps": 100,
+    "logging_steps": 20,
+    "warmup_ratio": 0.03,
+    "max_grad_norm": 0.3,
+    "bf16": true,
+    "remove_unused_columns": false,
+    "dataset_kwargs": {
+      "skip_prepare_dataset": true
+    },
+    "gradient_checkpointing_kwargs": {
+      "use_reentrant": false
+    }
+  },
+  "paths": {
+    "local": {
+      "data_dir": "data/solves_and_thoughts",
+      "source_folder": "data/arc_agi_2_reformatted",
+      "start_checkpoint_path": "C:\\Users\\thomas\\proj\\arcagi\\local_data\\model_weights\\gemma3-4b-it-ORIGINAL"
+    },
+    "cloud": {
+      "data_dir": "/data/solves_and_thoughts",
+      "source_folder": "/data/arc_agi_2_reformatted",
+      "start_checkpoint_path": "/models/gemma3-4b-it-ORIGINAL"
+    }
+  }
+} 
