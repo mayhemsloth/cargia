@@ -18,9 +18,6 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 import logging
 
-# Add the parent directory to the path so we can import cargia modules
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-
 from cargia.training.trainer import CargiaGoogleGemma3Trainer
 from cargia.training.training_config import TrainingConfig
 
