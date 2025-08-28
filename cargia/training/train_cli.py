@@ -6,12 +6,12 @@ This script provides a CLI interface for running training with different configu
 supporting both local and cloud deployment scenarios.
 
 Usage:
-    python train_cli.py --config configs/step_1_overfit_single.json --local
-    python train_cli.py --config configs/step_1_overfit_single.json --cloud
+    python train_cli.py --config configs/step_1_overfit_single.yaml --local
+    python train_cli.py --config configs/step_1_overfit_single.yaml --cloud
 """
 
 import argparse
-import json
+import yaml
 import os
 import sys
 from pathlib import Path
@@ -41,17 +41,17 @@ class TrainingCLI:
         self.logger = logging.getLogger(__name__)
         
     def load_config(self, config_path: str) -> Dict[str, Any]:
-        """Load and parse configuration file."""
+        """Load and parse YAML configuration file."""
         try:
-            with open(config_path, 'r') as f:
-                config = json.load(f)
-            self.logger.info(f"Loaded configuration from {config_path}")
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = yaml.safe_load(f)
+            self.logger.info(f"Loaded YAML configuration from {config_path}")
             return config
         except FileNotFoundError:
             self.logger.error(f"Configuration file not found: {config_path}")
             sys.exit(1)
-        except json.JSONDecodeError as e:
-            self.logger.error(f"Invalid JSON in configuration file: {e}")
+        except yaml.YAMLError as e:
+            self.logger.error(f"Invalid YAML in configuration file: {e}")
             sys.exit(1)
             
     def validate_config(self, config: Dict[str, Any]) -> bool:
@@ -181,20 +181,20 @@ def main():
         epilog="""
 Examples:
   # Local testing
-  python train_cli.py --config configs/step_1_overfit_single.json --local
+  python train_cli.py --config configs/step_1_overfit_single.yaml --local
   
   # Cloud deployment
-  python train_cli.py --config configs/step_1_overfit_single.json --cloud
+  python train_cli.py --config configs/step_1_overfit_single.yaml --cloud
   
   # With custom model path
-  python train_cli.py --config configs/step_1_overfit_single.json --cloud --model-path /custom/path
+  python train_cli.py --config configs/step_1_overfit_single.yaml --cloud --model-path /custom/path
         """
     )
     
     parser.add_argument(
         '--config', 
         required=True,
-        help='Path to configuration JSON file'
+        help='Path to configuration YAML file'
     )
     
     parser.add_argument(

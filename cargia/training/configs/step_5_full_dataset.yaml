@@ -1,0 +1,51 @@
+name: step_5_full_dataset
+description: Full dataset training - no sampling limit, for production training after overfitting tests pass
+training:
+  verbose: true
+  device: cuda
+  data_dir: data/solves_and_thoughts
+  source_folder: data/arc_agi_2_reformatted
+  data_sample_maximum_limit: null
+  start_checkpoint_path: C:\Users\thomas\proj\arcagi\local_data\model_weights\gemma3-4b-it-ORIGINAL
+  assistant_only_loss: true
+  grid_loss_weight: 10.0
+  binary_grid_loss_weight: 50.0
+  binary_loss_type: exponential
+  binary_loss_sensitivity: 10.0
+  use_bitsnbytes: false
+augmentation:
+  use_any_augmentation: true
+  use_color_invariance: true
+  use_char_invariance: true
+  use_spatial_aug: true
+  use_grid_loss: true
+training_args:
+  num_train_epochs: 3
+  max_steps: 10000
+  learning_rate: 2e-4
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 1
+  save_strategy: steps
+  save_steps: 1000
+  eval_steps: 500
+  logging_steps: 100
+  warmup_ratio: 0.03
+  max_grad_norm: 0.3
+  bf16: true
+  remove_unused_columns: false
+  dataset_kwargs:
+    skip_prepare_dataset: true
+  gradient_checkpointing_kwargs:
+    use_reentrant: false
+paths:
+  local:
+    data_dir: data/solves_and_thoughts
+    source_folder: data/arc_agi_2_reformatted
+    start_checkpoint_path: C:\Users\thomas\proj\arcagi\local_data\model_weights\gemma3-4b-it-ORIGINAL
+    output_dir: ./runs
+  cloud:
+    data_dir: data/solves_and_thoughts
+    source_folder: data/arc_agi_2_reformatted
+    start_checkpoint_path: /weights/gemma3-4b-it-ORIGINAL
+    output_dir: /outputs 

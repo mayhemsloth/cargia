@@ -1,6 +1,14 @@
 # Training Configuration Files
 
-This directory contains configuration files for different training scenarios in the Cargia training sequence.
+This directory contains YAML configuration files for different training scenarios in the Cargia training sequence.
+
+## Why YAML?
+
+YAML was chosen over JSON for configuration files because it offers:
+- **Better readability**: Clean, indented structure without quotes and brackets
+- **Comments support**: Can add explanatory comments to configurations
+- **Easier editing**: Less syntax overhead, especially for nested structures
+- **Human-friendly**: More intuitive for manual configuration editing
 
 ## Configuration Structure
 
@@ -26,7 +34,7 @@ Each configuration file follows this structure:
 
 ### Step 1: Overfit Single Sample
 ```bash
-python train_cli.py --config configs/step_1_overfit_single.json --local
+python train_cli.py --config configs/step_1_overfit_single.yaml --local
 ```
 - **Purpose**: Ensures core training code loop works
 - **Data**: 1 sample
@@ -35,7 +43,7 @@ python train_cli.py --config configs/step_1_overfit_single.json --local
 
 ### Step 2: Overfit Eight Samples
 ```bash
-python train_cli.py --config configs/step_2_overfit_eight.json --local
+python train_cli.py --config configs/step_2_overfit_eight.yaml --local
 ```
 - **Purpose**: Further ensures core training code loop works
 - **Data**: 8 samples
@@ -44,7 +52,7 @@ python train_cli.py --config configs/step_2_overfit_eight.json --local
 
 ### Step 3: Overfit Single Sample with Augmentations
 ```bash
-python train_cli.py --config configs/step_3_overfit_single_with_aug.json --local
+python train_cli.py --config configs/step_3_overfit_single_with_aug.yaml --local
 ```
 - **Purpose**: Ensures augmentations code works as expected
 - **Data**: 1 sample
@@ -53,7 +61,7 @@ python train_cli.py --config configs/step_3_overfit_single_with_aug.json --local
 
 ### Step 4: Overfit Eight Samples with Augmentations
 ```bash
-python train_cli.py --config configs/step_4_overfit_eight_with_aug.json --local
+python train_cli.py --config configs/step_4_overfit_eight_with_aug.yaml --local
 ```
 - **Purpose**: Tests model's ability to memorize with LoRA training
 - **Data**: 8 samples
@@ -62,7 +70,7 @@ python train_cli.py --config configs/step_4_overfit_eight_with_aug.json --local
 
 ### Step 5: Full Dataset Training
 ```bash
-python train_cli.py --config configs/step_5_full_dataset.json --cloud
+python train_cli.py --config configs/step_5_full_dataset.yaml --cloud
 ```
 - **Purpose**: Production training after overfitting tests pass
 - **Data**: Full dataset (no limit)
@@ -73,7 +81,7 @@ python train_cli.py --config configs/step_5_full_dataset.json --cloud
 
 For cloud deployment, use the `--cloud` flag:
 ```bash
-python train_cli.py --config configs/step_X_config.json --cloud
+python train_cli.py --config configs/step_X_config.yaml --cloud
 ```
 
 The cloud configuration will automatically use the appropriate paths for your cloud environment.
