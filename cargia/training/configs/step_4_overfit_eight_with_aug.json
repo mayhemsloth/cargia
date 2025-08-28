@@ -1,6 +1,6 @@
 {
-  "name": "step_2_overfit_eight",
-  "description": "Overfit to eight training data points - further ensures core training code loop works",
+  "name": "step_4_overfit_eight_with_aug",
+  "description": "Overfit to 8 training data points with augmentations - tests model's ability to memorize with LoRA training",
   "training": {
     "verbose": true,
     "device": "cuda",
@@ -16,15 +16,15 @@
     "use_bitsnbytes": false
   },
   "augmentation": {
-    "use_any_augmentation": false,
-    "use_color_invariance": false,
-    "use_char_invariance": false,
-    "use_spatial_aug": false,
+    "use_any_augmentation": true,
+    "use_color_invariance": true,
+    "use_char_invariance": true,
+    "use_spatial_aug": true,
     "use_grid_loss": true
   },
   "training_args": {
     "num_train_epochs": 1,
-    "max_steps": 200,
+    "max_steps": 500,
     "learning_rate": 2e-4,
     "per_device_train_batch_size": 1,
     "per_device_eval_batch_size": 1,
@@ -32,7 +32,7 @@
     "save_strategy": "steps",
     "save_steps": 100,
     "eval_steps": 100,
-    "logging_steps": 20,
+    "logging_steps": 10,
     "warmup_ratio": 0.03,
     "max_grad_norm": 0.3,
     "bf16": true,

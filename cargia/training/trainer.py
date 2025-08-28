@@ -80,8 +80,14 @@ class CargiaGoogleGemma3Trainer:
         if self.config.verbose: print(f"Processor initialized from {config.start_checkpoint_path}")
 
         # Load all solves
-        solves= SolveLoader(config.data_dir, config.source_folder).load_all_solves() # a list of SolveData objects
+        solves = SolveLoader(config.data_dir, config.source_folder).load_all_solves() # a list of SolveData objects
         if self.config.verbose: print(f"{len(solves)} SolveData objects loaded")
+        
+        # Apply data sampling limit if specified
+        if config.data_sample_maximum_limit is not None:
+            max_samples = min(config.data_sample_maximum_limit, len(solves))
+            solves = solves[:max_samples]
+            if self.config.verbose: print(f"Limited to {max_samples} samples due to data_sample_maximum_limit={config.data_sample_maximum_limit}")
         
         # split into train and eval sets
         train_solves, eval_solves = train_test_split(solves, test_size=0.2, random_state=1234)
@@ -126,12 +132,12 @@ class CargiaGoogleGemma3Trainer:
                 bf16=True,                                  # use bfloat16 precision
                 max_grad_norm=0.3,                          # max gradient norm based on QLoRA paper
                 warmup_ratio=0.03,                          # warmup ratio based on QLoRA paper
-                num_train_epochs    = 1,
+                num_train_epochs    = config.num_train_epochs,
                 logging_steps       = 1,
                 save_steps          = 500,
                 eval_steps          = 500,
                 learning_rate       = 2e-4,
-                max_steps           = 1000,  # this is to limit the training to 1000 steps
+                max_steps           = config.max_steps,  # use config value for training step limit
                 remove_unused_columns=False, # ⚠️ must stay False for multimodal,
                 assistant_only_loss=False,   # only use the assistant loss
                 dataset_text_field=None,     # need a dummy field for collator

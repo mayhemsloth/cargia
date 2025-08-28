@@ -1,12 +1,12 @@
 {
-  "name": "step_2_overfit_eight",
-  "description": "Overfit to eight training data points - further ensures core training code loop works",
+  "name": "step_3_overfit_single_with_aug",
+  "description": "Overfit to single training data point with augmentations - ensures augmentations code works as expected",
   "training": {
     "verbose": true,
     "device": "cuda",
     "data_dir": "data/solves_and_thoughts",
     "source_folder": "data/arc_agi_2_reformatted",
-    "data_sample_maximum_limit": 8,
+    "data_sample_maximum_limit": 1,
     "start_checkpoint_path": "C:\\Users\\thomas\\proj\\arcagi\\local_data\\model_weights\\gemma3-4b-it-ORIGINAL",
     "assistant_only_loss": true,
     "grid_loss_weight": 10.0,
@@ -16,10 +16,10 @@
     "use_bitsnbytes": false
   },
   "augmentation": {
-    "use_any_augmentation": false,
-    "use_color_invariance": false,
-    "use_char_invariance": false,
-    "use_spatial_aug": false,
+    "use_any_augmentation": true,
+    "use_color_invariance": true,
+    "use_char_invariance": true,
+    "use_spatial_aug": true,
     "use_grid_loss": true
   },
   "training_args": {
@@ -30,9 +30,9 @@
     "per_device_eval_batch_size": 1,
     "gradient_accumulation_steps": 1,
     "save_strategy": "steps",
-    "save_steps": 100,
-    "eval_steps": 100,
-    "logging_steps": 20,
+    "save_steps": 50,
+    "eval_steps": 50,
+    "logging_steps": 10,
     "warmup_ratio": 0.03,
     "max_grad_norm": 0.3,
     "bf16": true,

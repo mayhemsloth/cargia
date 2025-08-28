@@ -16,8 +16,15 @@ class TrainingConfig:
     data_dir: str = "data/solves_and_thoughts" # where the data is stored
     source_folder: str = "data/arc_agi_2_reformatted" # where the source ARC AGI 2 data is stored
     
+    # Data sampling control
+    data_sample_maximum_limit: Optional[int] = None  # None = use full dataset, int = limit total samples
+    
     # Model configuration
     start_checkpoint_path: str = "C:\\Users\\thomas\\proj\\arcagi\\local_data\\model_weights\\gemma3-4b-it-ORIGINAL" # if None, will start from scratch
+    
+    # Training control
+    max_steps: int = 1000  # Maximum training steps (useful for overfitting tests)
+    num_train_epochs: int = 1  # Number of training epochs
     
     # Loss weights
     assistant_only_loss: bool = True
