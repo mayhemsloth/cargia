@@ -52,5 +52,5 @@ COPY . .
 # Set the working directory to where the main code lives
 WORKDIR /app/cargia
 
-# Default command (will be overridden by docker run)
-CMD ["python", "training/train_cli.py", "--help"] 
+# Default command - keep container alive with sleep infinity
+CMD ["bash", "-lc", "sleep infinity"] 
