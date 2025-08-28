@@ -29,6 +29,7 @@ dependencies = [
     "trl",
     "bitsandbytes",
     "sentencepiece",
+    "PyYAML",
 ]
 # NOTE: I also needed to grab triton-windows==3.1.0.post17 to enable Windows-usage of Gemma3,
 # you might need a different version of triton-windows to match whatever torch you are using

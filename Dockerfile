@@ -49,6 +49,9 @@ RUN pip install \
 # Copy the entire codebase
 COPY . .
 
+# Install the cargia package in development mode
+RUN pip install -e .
+
 # Set the working directory to where the main code lives
 WORKDIR /app/cargia
 

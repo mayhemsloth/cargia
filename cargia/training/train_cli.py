@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 import logging
 
+# Import from installed package
 from cargia.training.trainer import CargiaGoogleGemma3Trainer
 from cargia.training.training_config import TrainingConfig
 
