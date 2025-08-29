@@ -9,7 +9,7 @@ training:
   source_folder: data/arc_agi_2_reformatted
   data_sample_maximum_limit: 1  # Limit to single sample for overfitting test
   start_checkpoint_path: C:\Users\thomas\proj\arcagi\local_data\model_weights\gemma3-4b-it-ORIGINAL
-  assistant_only_loss: true
+  assistant_only_loss: false
   grid_loss_weight: 10.0        # Weight for grid output accuracy
   binary_grid_loss_weight: 50.0 # Weight for perfect grid matches
   binary_loss_type: exponential

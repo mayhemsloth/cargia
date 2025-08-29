@@ -146,6 +146,11 @@ class TrainingCLI:
             self.logger.info("Starting training...")
             trainer.sft_trainer.train()
             self.logger.info("Training completed successfully")
+
+            # Save model
+            self.logger.info(f"Saving model to {training_config.output_dir}")
+            trainer.sft_trainer.save_model(training_config.output_dir)
+            self.logger.info("Model saved successfully")
             
         except Exception as e:
             self.logger.error(f"Training failed: {e}")

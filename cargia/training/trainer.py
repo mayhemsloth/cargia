@@ -89,9 +89,21 @@ class CargiaGoogleGemma3Trainer:
             solves = solves[:max_samples]
             if self.config.verbose: print(f"Limited to {max_samples} samples due to data_sample_maximum_limit={config.data_sample_maximum_limit}")
         
-        # split into train and eval sets
-        train_solves, eval_solves = train_test_split(solves, test_size=0.2, random_state=1234)
-        if self.config.verbose: print(f"{len(train_solves)} train solves and {len(eval_solves)} eval solves")
+        # split into train and eval sets (handle small datasets)
+        if len(solves) == 1:
+            # For single sample, use it for both train and eval
+            train_solves = solves
+            eval_solves = solves
+            if self.config.verbose: print(f"Single sample mode: using same sample for train and eval")
+        elif len(solves) < 5:
+            # For very small datasets, use 80% train, 20% eval but ensure at least 1 in each
+            test_size = max(0.1, 1.0 / len(solves))  # Ensure at least 1 sample in each set
+            train_solves, eval_solves = train_test_split(solves, test_size=test_size, random_state=1234)
+            if self.config.verbose: print(f"Small dataset mode: {len(train_solves)} train solves and {len(eval_solves)} eval solves")
+        else:
+            # Normal split for larger datasets
+            train_solves, eval_solves = train_test_split(solves, test_size=0.2, random_state=1234)
+            if self.config.verbose: print(f"Normal split: {len(train_solves)} train solves and {len(eval_solves)} eval solves")
         
         # create the Dataset objects
         self.raw_train_ds = Dataset.from_list([{"task_raw": t.to_dict()} for t in train_solves])
@@ -106,20 +118,20 @@ class CargiaGoogleGemma3Trainer:
         peft_config = LoraConfig(
             lora_alpha=16,
             lora_dropout=0.05,
-            r=2,
+            r=16,
             bias="none",
             task_type="CAUSAL_LM",
             modules_to_save=["lm_head", "embed_tokens",],
-            # target_modules="all-linear",
-            target_modules=[
-                "q_proj",
-                # "k_proj",
-                # "v_proj",
-                # "o_proj",
-                # "gate_proj",
-                # "up_proj",
-                # "down_proj",
-            ]
+            target_modules="all-linear",
+            # target_modules=[
+            #     "q_proj",
+            #     "k_proj",
+            #     "v_proj",
+            #     "o_proj",
+            #     "gate_proj",
+            #     "up_proj",
+            #     "down_proj",
+            # ]
         )
 
         training_args = SFTConfig(
@@ -805,15 +817,15 @@ class CargiaGoogleGemma3Trainer:
             batch = self.processor(text=texts, 
                                 images=images,
                                 return_tensors="pt",
-                                padding=True,
-                                truncation=True,
-                                max_length=4096)
+                                padding=False,
+                                truncation=False,
+                                max_length=16384)
         else:
             batch = self.processor(text=texts,
                                 return_tensors="pt",
-                                padding=True,
-                                truncation=True,
-                                max_length=4096)
+                                padding=False,
+                                truncation=False,
+                                max_length=16384)
 
         # ➎  label masking (same as Google tutorial)
         labels = batch["input_ids"].clone()
@@ -855,4 +867,8 @@ if __name__ == "__main__":
     
     print("----Training starting----")
     trainer.sft_trainer.train()
+    print("----Training completed----")
+
+    print(f"----Saving model to {TRAINING_CONFIG.output_dir}----")
+    trainer.sft_trainer.save_model(TRAINING_CONFIG.output_dir)
     print("===== Training Script Completed =====")
