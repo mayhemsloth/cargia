@@ -31,7 +31,7 @@ WORKDIR /app
 COPY requirements-docker.txt .
 
 # Upgrade PyTorch to the required version
-RUN pip install torch==2.5.1 torchvision torchaudio
+RUN pip install torch==2.6.0 torchvision torchaudio
 
 # Install Python dependencies (excluding PyTorch which is already in base image)
 RUN pip install -r requirements-docker.txt
