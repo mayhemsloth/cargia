@@ -47,7 +47,7 @@ paths:
     start_checkpoint_path: C:\Users\thomas\proj\arcagi\local_data\model_weights\gemma3-4b-it-ORIGINAL
     output_dir: ./runs
   cloud:
-    data_dir: data/solves_and_thoughts
-    source_folder: data/arc_agi_2_reformatted
-    start_checkpoint_path: /weights/gemma3-4b-it-ORIGINAL
-    output_dir: /outputs 
+    data_dir: /app/cargia/data/solves_and_thoughts
+    source_folder: /app/cargia/data/arc_agi_2_reformatted
+    start_checkpoint_path: /workspace/weights/gemma3-4b-it-ORIGINAL
+    output_dir: /workspace/outputs 

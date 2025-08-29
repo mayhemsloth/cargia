@@ -4,27 +4,40 @@ This guide explains how to work with mounted volumes when SSH-ing into RunPod Do
 
 ## 🔗 **Volume Mounting in RunPod**
 
-### **1. Pre-Mounted Volumes (Recommended)**
-When you create a RunPod pod, specify volumes that get mounted **before** the container starts:
+### **1. Pre-Configured Volumes (REQUIRED for SSH Access)**
+When you create a RunPod pod, you **must** specify volumes in the pod configuration **before** starting the container:
 
 ```yaml
 # In your RunPod pod configuration
 volumes:
-  - name: data-volume
+  - name: training-data
     mountPath: /data
     size: 100Gi
+    isPersistent: true  # Persists between pod restarts
+  
   - name: model-weights
     mountPath: /weights
     size: 50Gi
-  - name: outputs
+    isPersistent: true
+  
+  - name: training-outputs
     mountPath: /outputs
     size: 20Gi
+    isPersistent: true
+  
+  - name: workspace
+    mountPath: /workspace
+    size: 10Gi
+    isPersistent: true
 ```
 
-These volumes are automatically available inside the container at the specified mount paths.
+**⚠️ IMPORTANT**: These volumes are configured **before** the container starts and are automatically available when you SSH in. You cannot add new volume mounts after the container is running.
 
-### **2. Runtime Volume Mounting (Advanced)**
-You can also mount volumes after the container is running, but this requires additional setup.
+### **2. Why SSH Access Requires Pre-Configuration**
+- **SSH access**: Volumes must be pre-configured in pod creation
+- **No dynamic mounting**: Cannot use `docker run -v` flags after container starts
+- **Persistent access**: Volumes remain available across SSH sessions
+- **Automatic mounting**: No manual mount commands needed
 
 ## 📁 **Accessing Mounted Volumes Inside Container**
 
@@ -119,17 +132,17 @@ python -c "from cargia.training.trainer import CargiaGoogleGemma3Trainer; print(
 ```
 
 The `--cloud` flag automatically uses these paths:
-- **Data**: `/data/solves_and_thoughts`
-- **Source**: `/data/arc_agi_2_reformatted`
-- **Model**: `/weights/gemma3-4b-it-ORIGINAL`
-- **Outputs**: `/outputs`
+- **Data**: `/workspace/data/solves_and_thoughts`
+- **Source**: `/workspace/data/arc_agi_2_reformatted`
+- **Model**: `/workspace/weights/gemma3-4b-it-ORIGINAL`
+- **Outputs**: `/workspace/outputs`
 
 ## 🔍 **Troubleshooting Volume Access**
 
 ### **Problem: Can't see mounted volumes**
 ```bash
 # Check if volumes are mounted
-mount | grep -E "(data|weights|outputs)"
+mount | grep -E "(workspace)"
 
 # Check disk usage
 df -h
@@ -137,6 +150,17 @@ df -h
 # Look for volume devices
 lsblk
 ```
+
+### **Problem: Volumes not configured in pod**
+**⚠️ CRITICAL**: If you can't see `/workspace/data`, `/workspace/weights`, or `/workspace/outputs` directories, this means the volumes were not configured when the pod was created.
+
+**Solution**: You must recreate the pod with proper volume configuration:
+
+1. **Stop current pod** in RunPod dashboard
+2. **Create new pod** with volume configuration (see example above)
+3. **SSH into new pod** - volumes will be automatically available
+
+**You cannot add volumes after the container is running when using SSH access.**
 
 ### **Problem: Permission denied**
 ```bash
@@ -163,15 +187,10 @@ docker volume inspect <volume-name>
 ```yaml
 # In RunPod pod configuration
 volumes:
-  - name: training-data
-    mountPath: /data
+  - name: workspace
+    mountPath: /workspace
     size: 100Gi
-  - name: model-weights
-    mountPath: /weights
-    size: 50Gi
-  - name: training-outputs
-    mountPath: /outputs
-    size: 20Gi
+    isPersistent: true
 ```
 
 ### **2. SSH into Container**
@@ -183,11 +202,18 @@ ssh root@<container-ip> -p <ssh-port>
 ```bash
 # Check mounts
 df -h
-ls -la /data /weights /outputs
+ls -la /workspace/data /workspace/weights /workspace/outputs
 
 # Verify your data is there
-ls -la /data/solves_and_thoughts
-ls -la /weights/gemma3-4b-it-ORIGINAL
+ls -la /workspace/data/solves_and_thoughts
+ls -la /workspace/weights/gemma3-4b-it-ORIGINAL
+
+# If volumes are missing, check pod configuration
+echo "Available mount points:"
+mount | grep -E "(workspace)"
+
+echo "Disk usage:"
+df -h | grep -E "(workspace)"
 ```
 
 ### **4. Run Training**
