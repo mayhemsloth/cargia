@@ -828,7 +828,7 @@ class CargiaGoogleGemma3Trainer:
                                 max_length=16384)
 
         # ➎  label masking (same as Google tutorial)
-        print(batch.size())
+        print(f"{batch['input_ids'].shape=}")
         labels = batch["input_ids"].clone()
         pad_id = self.processor.tokenizer.pad_token_id
         boi_id = self.processor.tokenizer.convert_tokens_to_ids(self.processor.tokenizer.special_tokens_map["boi_token"])
