@@ -118,20 +118,20 @@ class CargiaGoogleGemma3Trainer:
         peft_config = LoraConfig(
             lora_alpha=16,
             lora_dropout=0.05,
-            r=16,
+            r=8,
             bias="none",
             task_type="CAUSAL_LM",
             modules_to_save=["lm_head", "embed_tokens",],
-            target_modules="all-linear",
-            # target_modules=[
-            #     "q_proj",
-            #     "k_proj",
-            #     "v_proj",
-            #     "o_proj",
-            #     "gate_proj",
-            #     "up_proj",
-            #     "down_proj",
-            # ]
+            # target_modules="all-linear",
+            target_modules=[
+                "q_proj",
+                "k_proj",
+                "v_proj",
+                "o_proj",
+                "gate_proj",
+                "up_proj",
+                "down_proj",
+            ]
         )
 
         training_args = SFTConfig(
@@ -781,7 +781,7 @@ class CargiaGoogleGemma3Trainer:
                     conv,
                     add_generation_prompt=False,
                     tokenize=False).strip()
-            print(txt)
+            # print(txt)
             texts.append(txt)
 
             # ➌  collect PIL images matching <boi> tokens
