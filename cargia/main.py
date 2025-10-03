@@ -368,6 +368,84 @@ class PairWidget(QWidget):
         """Get the current thought text."""
         return self.thought_text.toPlainText().strip()
 
+class ReadOnlyPairWidget(QWidget):
+    """Read-only version of PairWidget for viewer mode."""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        layout = QVBoxLayout()
+        
+        # Grids container
+        grids_container = QHBoxLayout()
+        grids_container.setSpacing(20)  # Add spacing between input and output grids
+        
+        # Input grid
+        input_group = QGroupBox("Input")
+        input_layout = QVBoxLayout()
+        self.input_grid = GridWidget(3, 3)
+        self.input_grid.setMinimumSize(300, 300)  # Set minimum size for the grid
+        input_layout.addWidget(self.input_grid)
+        input_group.setLayout(input_layout)
+        grids_container.addWidget(input_group)
+        
+        # Output grid
+        output_group = QGroupBox("Output")
+        output_layout = QVBoxLayout()
+        self.output_grid = GridWidget(3, 3)
+        self.output_grid.setMinimumSize(300, 300)  # Set minimum size for the grid
+        output_layout.addWidget(self.output_grid)
+        output_group.setLayout(output_layout)
+        grids_container.addWidget(output_group)
+        
+        layout.addLayout(grids_container)
+        
+        # Thought text box (read-only)
+        self.thought_text = QTextEdit()
+        self.thought_text.setReadOnly(True)
+        self.thought_text.setPlaceholderText("No thoughts recorded for this pair...")
+        self.thought_text.setMinimumHeight(100)
+        layout.addWidget(self.thought_text)
+        
+        # Pair info label
+        self.pair_info_label = QLabel("")
+        self.pair_info_label.setStyleSheet("font-weight: bold; color: #666; padding: 5px;")
+        layout.addWidget(self.pair_info_label)
+        
+        self.setLayout(layout)
+    
+    def set_pair_data(self, pair_data, is_test=False):
+        """Set the pair data for display."""
+        input_data = pair_data.get('input', [])
+        output_data = pair_data.get('output', [])
+        thought_text = pair_data.get('thought_text', '')
+        pair_label = pair_data.get('pair_label', '')
+        pair_type = pair_data.get('pair_type', '')
+        sequence_index = pair_data.get('sequence_index', 0)
+        
+        # Set grid data
+        if input_data and output_data:
+            rows = len(input_data)
+            cols = len(input_data[0])
+            
+            self.input_grid.resizeGrid(rows, cols)
+            self.output_grid.resizeGrid(rows, cols)
+            
+            self.input_grid.setGridData(input_data)
+            self.output_grid.setGridData(output_data)
+        
+        # Set thought text
+        self.thought_text.setPlainText(thought_text)
+        
+        # Set pair info
+        info_text = f"Pair: {pair_label} | Type: {pair_type} | Sequence: {sequence_index}"
+        self.pair_info_label.setText(info_text)
+        
+        # Set different background color for test pairs
+        if is_test:
+            self.thought_text.setStyleSheet("background-color:rgb(144, 42, 16); color: white;")
+        else:
+            self.thought_text.setStyleSheet("")
+
 class ColorSwatch(QFrame):
     def __init__(self, color, name, number, parent=None):
         super().__init__(parent)
@@ -804,6 +882,157 @@ class TextComparisonDialog(QDialog):
             self.current_index += 1
             self.show_current_thought()
 
+class SolveSelectionDialog(QDialog):
+    """Dialog for selecting a solve to view in viewer mode."""
+    
+    def __init__(self, data_manager, parent=None):
+        super().__init__(parent)
+        self.data_manager = data_manager
+        self.setWindowTitle("Select Solve to View")
+        self.setMinimumSize(800, 600)
+        
+        layout = QVBoxLayout()
+        
+        # Title
+        title_label = QLabel("Select a Solve to View")
+        title_label.setFont(QFont('Arial', 16, QFont.Weight.Bold))
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(title_label)
+        
+        # Create table widget
+        self.table = QTableWidget()
+        self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.table.setAlternatingRowColors(True)
+        self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        layout.addWidget(self.table)
+        
+        # Buttons
+        button_layout = QHBoxLayout()
+        
+        self.view_btn = QPushButton("View Selected Solve")
+        self.view_btn.setEnabled(False)
+        self.view_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                font-size: 14px;
+                font-weight: bold;
+                padding: 10px;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+            QPushButton:disabled {
+                background-color: #cccccc;
+                color: #666666;
+            }
+        """)
+        self.view_btn.clicked.connect(self.accept)
+        button_layout.addWidget(self.view_btn)
+        
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.clicked.connect(self.reject)
+        button_layout.addWidget(cancel_btn)
+        
+        layout.addLayout(button_layout)
+        
+        self.setLayout(layout)
+        
+        # Store solve data
+        self.solves_data = []
+        self.selected_solve_id = None
+        
+        # Connect table selection
+        self.table.itemSelectionChanged.connect(self.on_selection_changed)
+        
+        # Load solves
+        self.load_solves()
+    
+    def load_solves(self):
+        """Load and display available solves."""
+        try:
+            # Get all solves for the current user
+            conn = sqlite3.connect(self.data_manager.solves_db_path)
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                SELECT id, task_id, user_id, start_time, end_time, metadata_labels
+                FROM solves
+                WHERE user_id = ?
+                ORDER BY start_time DESC
+            """, (self.data_manager.current_user,))
+            
+            rows = cursor.fetchall()
+            
+            # Set up table
+            self.table.setColumnCount(6)
+            self.table.setRowCount(len(rows))
+            self.table.setHorizontalHeaderLabels([
+                "Solve ID", "Task ID", "User", "Start Time", "End Time", "Metadata"
+            ])
+            
+            # Fill table with data
+            self.solves_data = []
+            for i, row in enumerate(rows):
+                solve_id, task_id, user_id, start_time, end_time, metadata_labels = row
+                
+                # Parse metadata labels
+                try:
+                    metadata = json.loads(metadata_labels) if metadata_labels else {}
+                    metadata_str = ", ".join([k for k, v in metadata.items() if v])
+                except:
+                    metadata_str = "None"
+                
+                # Format times
+                start_time_str = start_time[:19] if start_time else "Unknown"
+                end_time_str = end_time[:19] if end_time else "Incomplete"
+                
+                # Add to table
+                self.table.setItem(i, 0, QTableWidgetItem(str(solve_id)))
+                self.table.setItem(i, 1, QTableWidgetItem(task_id))
+                self.table.setItem(i, 2, QTableWidgetItem(user_id))
+                self.table.setItem(i, 3, QTableWidgetItem(start_time_str))
+                self.table.setItem(i, 4, QTableWidgetItem(end_time_str))
+                self.table.setItem(i, 5, QTableWidgetItem(metadata_str))
+                
+                # Store solve data
+                self.solves_data.append({
+                    'solve_id': solve_id,
+                    'task_id': task_id,
+                    'user_id': user_id,
+                    'start_time': start_time,
+                    'end_time': end_time,
+                    'metadata_labels': metadata_labels
+                })
+            
+            # Resize columns to content
+            self.table.resizeColumnsToContents()
+            
+        except Exception as e:
+            log_error("Failed to load solves", e)
+            QMessageBox.critical(self, "Error", f"Failed to load solves: {str(e)}")
+        finally:
+            if 'conn' in locals():
+                conn.close()
+    
+    def on_selection_changed(self):
+        """Handle table selection change."""
+        selected_rows = self.table.selectionModel().selectedRows()
+        if selected_rows:
+            row = selected_rows[0].row()
+            self.selected_solve_id = self.solves_data[row]['solve_id']
+            self.view_btn.setEnabled(True)
+        else:
+            self.selected_solve_id = None
+            self.view_btn.setEnabled(False)
+    
+    def get_selected_solve_id(self):
+        """Get the selected solve ID."""
+        return self.selected_solve_id
+
 class UnsavedWorkDialog(QDialog):
     """Confirmation dialog for unsaved work when starting a new solve."""
     
@@ -983,6 +1212,31 @@ class MainWindow(QMainWindow):
             
             info_layout.addLayout(db_buttons_layout)
             
+            # Add viewer mode toggle
+            self.viewer_mode_btn = QPushButton("Viewer Mode")
+            self.viewer_mode_btn.setCheckable(True)
+            self.viewer_mode_btn.clicked.connect(self.toggle_viewer_mode)
+            info_layout.addWidget(self.viewer_mode_btn)
+            
+            # Add viewer navigation buttons (initially hidden)
+            self.viewer_nav_layout = QHBoxLayout()
+            
+            self.prev_solve_btn = QPushButton("← Previous Solve")
+            self.prev_solve_btn.setEnabled(False)
+            self.prev_solve_btn.clicked.connect(self.show_previous_solve)
+            self.viewer_nav_layout.addWidget(self.prev_solve_btn)
+            
+            self.next_solve_btn = QPushButton("Next Solve →")
+            self.next_solve_btn.setEnabled(False)
+            self.next_solve_btn.clicked.connect(self.show_next_solve)
+            self.viewer_nav_layout.addWidget(self.next_solve_btn)
+            
+            # Initially hide viewer navigation
+            self.viewer_nav_widget = QWidget()
+            self.viewer_nav_widget.setLayout(self.viewer_nav_layout)
+            self.viewer_nav_widget.setVisible(False)
+            info_layout.addWidget(self.viewer_nav_widget)
+            
             # Add transcription toggle button
             self.transcription_toggle = QPushButton("Start Transcription")
             self.transcription_toggle.setCheckable(True)
@@ -1087,6 +1341,15 @@ class MainWindow(QMainWindow):
             self.showing_test_pairs = False  # Track whether we're showing test pairs
             self.pending_thoughts = {}  # Store thoughts by pair index until solve is complete
             self.solve_start_time = None  # Track when the solve started
+            
+            # Viewer mode state
+            self.viewer_mode = False
+            self.current_viewer_solve_id = None
+            self.current_viewer_solve_data = None
+            self.current_viewer_pair_index = 0
+            self.viewer_pairs = []  # List of pairs to display in viewer mode
+            self.viewer_solve_ids = []  # List of all available solve IDs for navigation
+            self.current_viewer_solve_index = 0  # Index in the solve list
             
             # Update window title with current user
             self.update_window_title()
@@ -1293,9 +1556,22 @@ class MainWindow(QMainWindow):
         
         return False
     
+    def is_solve_active(self):
+        """Check if a solve is currently active (not completed)."""
+        return self.current_task is not None and self.current_solve_id is None
+    
     def start_new_solve(self):
         """Start a new solve by finding the next unsolved task."""
         try:
+            # Check if in viewer mode
+            if self.viewer_mode:
+                QMessageBox.information(
+                    self,
+                    "Viewer Mode Active",
+                    "Please exit viewer mode before starting a new solve."
+                )
+                return
+            
             # Check for unsaved work and show confirmation if needed
             if self.has_unsaved_work():
                 dialog = UnsavedWorkDialog(self)
@@ -1361,6 +1637,9 @@ class MainWindow(QMainWindow):
             # Enable metadata buttons
             self.enable_metadata_buttons(True)
             
+            # Disable viewer mode button during active solve
+            self.viewer_mode_btn.setEnabled(False)
+            
             # Reset state
             self.current_train_index = 0
             self.current_test_index = 0
@@ -1411,6 +1690,11 @@ class MainWindow(QMainWindow):
     def show_next_pair(self):
         """Show the next pair in the current task."""
         try:
+            # Handle viewer mode
+            if self.viewer_mode:
+                self.show_next_viewer_pair()
+                return
+            
             # Save current thought to pending thoughts
             if self.pair_widgets:
                 current_widget = self.pair_widgets[0]  # Get the most recently added pair widget
@@ -1514,6 +1798,9 @@ class MainWindow(QMainWindow):
             
             # Disable metadata buttons
             self.enable_metadata_buttons(False)
+            
+            # Re-enable viewer mode button after solve completion
+            self.viewer_mode_btn.setEnabled(True)
             
             QMessageBox.information(
                 self,
@@ -1626,6 +1913,284 @@ class MainWindow(QMainWindow):
         except Exception as e:
             log_error(f"Failed to show {db_type} database viewer", e)
             QMessageBox.critical(self, "Error", f"Failed to show database viewer: {str(e)}")
+    
+    def toggle_viewer_mode(self, checked):
+        """Toggle between collection mode and viewer mode."""
+        try:
+            if checked:
+                # Check if a solve is currently active
+                if self.is_solve_active():
+                    QMessageBox.information(
+                        self,
+                        "Solve in Progress",
+                        "Please complete or cancel the current solve before entering viewer mode."
+                    )
+                    self.viewer_mode_btn.setChecked(False)
+                    return
+                
+                # Switch to viewer mode
+                self.enter_viewer_mode()
+            else:
+                # Switch back to collection mode
+                self.exit_viewer_mode()
+        except Exception as e:
+            log_error("Failed to toggle viewer mode", e)
+            QMessageBox.critical(self, "Error", f"Failed to toggle viewer mode: {str(e)}")
+    
+    def enter_viewer_mode(self):
+        """Enter viewer mode."""
+        try:
+            # Check for unsaved work in collection mode
+            if self.has_unsaved_work():
+                dialog = UnsavedWorkDialog(self)
+                if dialog.exec() != QDialog.DialogCode.Accepted:
+                    self.viewer_mode_btn.setChecked(False)
+                    return
+            
+            # Load available solve IDs for navigation
+            self.load_viewer_solve_ids()
+            
+            # Show solve selection dialog
+            dialog = SolveSelectionDialog(self.data_manager, self)
+            if dialog.exec() == QDialog.DialogCode.Accepted:
+                solve_id = dialog.get_selected_solve_id()
+                if solve_id:
+                    # Find the index of the selected solve
+                    if solve_id in self.viewer_solve_ids:
+                        self.current_viewer_solve_index = self.viewer_solve_ids.index(solve_id)
+                    self.load_solve_for_viewing(solve_id)
+                else:
+                    self.viewer_mode_btn.setChecked(False)
+            else:
+                self.viewer_mode_btn.setChecked(False)
+        except Exception as e:
+            log_error("Failed to enter viewer mode", e)
+            self.viewer_mode_btn.setChecked(False)
+            QMessageBox.critical(self, "Error", f"Failed to enter viewer mode: {str(e)}")
+    
+    def load_viewer_solve_ids(self):
+        """Load all available solve IDs for the current user."""
+        try:
+            conn = sqlite3.connect(self.data_manager.solves_db_path)
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                SELECT id FROM solves
+                WHERE user_id = ?
+                ORDER BY start_time DESC
+            """, (self.data_manager.current_user,))
+            
+            self.viewer_solve_ids = [row[0] for row in cursor.fetchall()]
+            
+        except Exception as e:
+            log_error("Failed to load viewer solve IDs", e)
+            self.viewer_solve_ids = []
+        finally:
+            if 'conn' in locals():
+                conn.close()
+    
+    def exit_viewer_mode(self):
+        """Exit viewer mode and return to collection mode."""
+        try:
+            # Clear viewer state
+            self.viewer_mode = False
+            self.current_viewer_solve_id = None
+            self.current_viewer_solve_data = None
+            self.current_viewer_pair_index = 0
+            self.viewer_pairs = []
+            self.viewer_solve_ids = []
+            self.current_viewer_solve_index = 0
+            
+            # Clear existing pairs
+            for widget in self.pair_widgets:
+                widget.deleteLater()
+            self.pair_widgets.clear()
+            
+            # Reset UI to collection mode
+            self.task_name_label.setText("Task: None")
+            self.next_pair_btn.setText("Show Next Pair")
+            self.next_pair_btn.setStyleSheet("")
+            self.next_pair_btn.setEnabled(False)
+            self.next_pair_action.setEnabled(False)
+            
+            # Hide viewer navigation
+            self.viewer_nav_widget.setVisible(False)
+            
+            # Disable metadata buttons
+            self.enable_metadata_buttons(False)
+            
+            # Update button text and enable it
+            self.viewer_mode_btn.setText("Viewer Mode")
+            self.viewer_mode_btn.setEnabled(True)
+            
+        except Exception as e:
+            log_error("Failed to exit viewer mode", e)
+    
+    def load_solve_for_viewing(self, solve_id):
+        """Load a solve for viewing in viewer mode."""
+        try:
+            from cargia.training.solve_loader import SolveLoader
+            
+            # Initialize solve loader with correct parameters
+            solve_loader = SolveLoader(
+                data_dir=self.data_manager.data_dir,
+                source_folder=self.data_manager.source_folder
+            )
+            
+            # Load all solves and find the one with matching ID
+            all_solves = solve_loader.load_all_solves(user_filter=self.data_manager.current_user)
+            solve_data = None
+            for solve in all_solves:
+                if solve.solve_metadata.get('solve_id') == solve_id:
+                    solve_data = solve
+                    break
+            
+            if not solve_data:
+                QMessageBox.warning(self, "Error", f"Could not load solve {solve_id}")
+                self.viewer_mode_btn.setChecked(False)
+                return
+            
+            # Set viewer mode state
+            self.viewer_mode = True
+            self.current_viewer_solve_id = solve_id
+            self.current_viewer_solve_data = solve_data
+            self.current_viewer_pair_index = 0
+            
+            # Build pairs list in the correct order
+            self.viewer_pairs = []
+            
+            # Add training pairs
+            for pair in solve_data.train_pairs:
+                self.viewer_pairs.append(pair)
+            
+            # Add test pairs
+            for pair in solve_data.test_pairs:
+                self.viewer_pairs.append(pair)
+            
+            # Update UI
+            self.task_name_label.setText(f"Viewing: {solve_data.task_id} (Solve {solve_id})")
+            self.next_pair_btn.setText("Next Pair")
+            self.next_pair_btn.setEnabled(True)
+            self.next_pair_action.setEnabled(True)
+            self.viewer_mode_btn.setText("Exit Viewer")
+            
+            # Show/hide viewer navigation
+            self.viewer_nav_widget.setVisible(True)
+            
+            # Update navigation buttons
+            self.update_viewer_navigation_buttons()
+            
+            # Disable metadata buttons in viewer mode
+            self.enable_metadata_buttons(False)
+            
+            # Clear existing pairs when starting a new solve
+            for widget in self.pair_widgets:
+                widget.deleteLater()
+            self.pair_widgets.clear()
+            
+            # Show first pair
+            self.show_current_viewer_pair()
+            
+        except Exception as e:
+            log_error("Failed to load solve for viewing", e)
+            self.viewer_mode_btn.setChecked(False)
+            QMessageBox.critical(self, "Error", f"Failed to load solve: {str(e)}")
+    
+    def update_viewer_navigation_buttons(self):
+        """Update the state of viewer navigation buttons."""
+        try:
+            if not self.viewer_mode or not self.viewer_solve_ids:
+                self.prev_solve_btn.setEnabled(False)
+                self.next_solve_btn.setEnabled(False)
+                return
+            
+            # Enable/disable previous button
+            self.prev_solve_btn.setEnabled(self.current_viewer_solve_index > 0)
+            
+            # Enable/disable next button
+            self.next_solve_btn.setEnabled(self.current_viewer_solve_index < len(self.viewer_solve_ids) - 1)
+            
+        except Exception as e:
+            log_error("Failed to update viewer navigation buttons", e)
+    
+    def show_current_viewer_pair(self):
+        """Show the current pair in viewer mode."""
+        try:
+            if not self.viewer_mode or not self.viewer_pairs:
+                return
+            
+            if self.current_viewer_pair_index >= len(self.viewer_pairs):
+                return
+            
+            # Get current pair
+            current_pair = self.viewer_pairs[self.current_viewer_pair_index]
+            
+            # Create read-only pair widget
+            pair_widget = ReadOnlyPairWidget()
+            pair_widget.set_pair_data(current_pair, is_test=current_pair.get('pair_type') == 'test')
+            
+            # Add to layout at the top (above previous pairs)
+            self.pairs_layout.insertWidget(0, pair_widget)
+            self.pair_widgets.insert(0, pair_widget)
+            
+            # Update navigation button
+            if self.current_viewer_pair_index >= len(self.viewer_pairs) - 1:
+                self.next_pair_btn.setText("Last Pair")
+                self.next_pair_btn.setStyleSheet("background-color: #cccccc; color: #666666;")
+                self.next_pair_btn.setEnabled(False)
+                self.next_pair_action.setEnabled(False)
+            else:
+                self.next_pair_btn.setText("Next Pair")
+                self.next_pair_btn.setStyleSheet("")
+                self.next_pair_btn.setEnabled(True)
+                self.next_pair_action.setEnabled(True)
+            
+            # Ensure the new pair is visible by scrolling to the top
+            self.centralWidget().findChild(QScrollArea).ensureWidgetVisible(pair_widget)
+            
+        except Exception as e:
+            log_error("Failed to show current viewer pair", e)
+    
+    def show_next_viewer_pair(self):
+        """Show the next pair in viewer mode."""
+        try:
+            if not self.viewer_mode or not self.viewer_pairs:
+                return
+            
+            if self.current_viewer_pair_index < len(self.viewer_pairs) - 1:
+                self.current_viewer_pair_index += 1
+                self.show_current_viewer_pair()
+            
+        except Exception as e:
+            log_error("Failed to show next viewer pair", e)
+    
+    def show_previous_solve(self):
+        """Show the previous solve in viewer mode."""
+        try:
+            if not self.viewer_mode or not self.viewer_solve_ids:
+                return
+            
+            if self.current_viewer_solve_index > 0:
+                self.current_viewer_solve_index -= 1
+                solve_id = self.viewer_solve_ids[self.current_viewer_solve_index]
+                self.load_solve_for_viewing(solve_id)
+            
+        except Exception as e:
+            log_error("Failed to show previous solve", e)
+    
+    def show_next_solve(self):
+        """Show the next solve in viewer mode."""
+        try:
+            if not self.viewer_mode or not self.viewer_solve_ids:
+                return
+            
+            if self.current_viewer_solve_index < len(self.viewer_solve_ids) - 1:
+                self.current_viewer_solve_index += 1
+                solve_id = self.viewer_solve_ids[self.current_viewer_solve_index]
+                self.load_solve_for_viewing(solve_id)
+            
+        except Exception as e:
+            log_error("Failed to show next solve", e)
 
 def main():
     try:
