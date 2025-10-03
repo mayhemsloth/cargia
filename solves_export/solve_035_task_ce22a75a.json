@@ -1,0 +1,757 @@
+{
+  "metadata": {
+    "solve_id": 35,
+    "task_id": "ce22a75a",
+    "user_id": "Thomas",
+    "solve_duration_seconds": 333,
+    "start_time": "2025-05-17T14:43:25.656956",
+    "end_time": "2025-05-17T14:48:58.728560",
+    "export_timestamp": "2025-10-03T00:26:00.411365",
+    "export_version": "1.0"
+  },
+  "arc_agi_task": {
+    "pairs": {
+      "a": {
+        "input": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            5,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            5,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            5,
+            0,
+            0,
+            5,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "output": [
+          [
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        ]
+      },
+      "b": {
+        "input": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            5,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            5,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            5,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "output": [
+          [
+            1,
+            1,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            1,
+            1,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            1,
+            1,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1
+          ]
+        ]
+      },
+      "c": {
+        "input": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            5,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            5,
+            0,
+            0,
+            0,
+            0,
+            0,
+            5,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            5,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "output": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            1,
+            1,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            1,
+            1,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "default_splits": {
+      "train": [
+        "a",
+        "b"
+      ],
+      "test": [
+        "c"
+      ]
+    }
+  },
+  "solve_configuration": {
+    "order_map_type": "default",
+    "order_map": {
+      "train": [
+        "a",
+        "b"
+      ],
+      "test": [
+        "c"
+      ]
+    },
+    "color_map": {
+      "0": {
+        "name": "black",
+        "color": [
+          0,
+          0,
+          0
+        ]
+      },
+      "1": {
+        "name": "blue",
+        "color": [
+          0,
+          70,
+          227
+        ]
+      },
+      "2": {
+        "name": "red",
+        "color": [
+          255,
+          65,
+          54
+        ]
+      },
+      "3": {
+        "name": "green",
+        "color": [
+          46,
+          204,
+          64
+        ]
+      },
+      "4": {
+        "name": "yellow",
+        "color": [
+          255,
+          220,
+          0
+        ]
+      },
+      "5": {
+        "name": "grey",
+        "color": [
+          170,
+          170,
+          170
+        ]
+      },
+      "6": {
+        "name": "pink",
+        "color": [
+          240,
+          18,
+          190
+        ]
+      },
+      "7": {
+        "name": "orange",
+        "color": [
+          255,
+          133,
+          27
+        ]
+      },
+      "8": {
+        "name": "aqua",
+        "color": [
+          15,
+          230,
+          253
+        ]
+      },
+      "9": {
+        "name": "purple",
+        "color": [
+          128,
+          0,
+          255
+        ]
+      }
+    },
+    "metadata_labels": {
+      "Rotational": true,
+      "Horizontal": true,
+      "Vertical": true,
+      "Translation": false,
+      "Invertable": true
+    }
+  },
+  "training_pairs": [
+    "a",
+    "b"
+  ],
+  "test_pairs": [
+    "c"
+  ],
+  "thoughts": {
+    "a": "The input and output grids are the same size. The input grid has a black background and four single gray tiles. The output grid also has a black background but now has a large blue object. We may be looking for some type of rule that informs us how we transform these gray tiles into this blue object. We noticed that the blue object in the output grid can be described as being composed of four separate three-by-three squares. The center of these squares is where the gray tiles used to be in the input grid. The hypothesis is the following. The input grid will be a black background containing some number of grey tiles. Wherever the grey tiles are represents the center of a 3x3 blue square that must be constructed in the output grid.",
+    "b": "The input grid again has a black background with some number of single gray tiles in this case, three. The output grid again has some number of Blue 3x3 squares. the location of these three by three squares. are exactly where the gray tiles are. the center of the gray tiles determines the center of the blue 3x3 squares in the output. That's what the hypothesis holds. We need to identify the gray single tiles in the input grid and effectively replace them with 3x3 blue squares in the output grid. The rest of the input grid stays the same.",
+    "c": "We applied the hypothesis here. We identify that the input grid has a black background and some number of gray tiles, in this case, four. For every gray tile, we, in the output grid, replace it with a 3x3 blue square. with the center of the square being in the exact location of the single gray tile. The rest of the input grid is copied over to the output grid. Thus, the output grid will have four 3x3 blue squares with the rest being black background."
+  },
+  "summary": {
+    "total_training_pairs": 2,
+    "total_test_pairs": 1,
+    "total_thoughts": 3,
+    "has_cleaned_thoughts": true,
+    "has_arc_agi_task": true
+  }
+}

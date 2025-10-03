@@ -1,0 +1,145 @@
+---
+description: When referencing the steps for building Cargia Trainer
+globs: 
+alwaysApply: false
+---
+Below is a pragmatic, **end-to-end action plan** that threads every new requirement into the existing Cargia code-base.  The order is meant to let you layer capabilities safely while keeping the GUI usable throughout.
+
+When implementing while referencing this document, we should do ONE STEP AT A TIME. We don't need to hurry to do everything right away. We should be DILIGENT in ensuring that all the added coded works first before moving on to the next step. 
+
+---
+
+## Phase 0 – Project “plumbing” (1 day)
+
+1. **Create a `cargia/training` package**  
+   `training/ ├── __init__.py ├── config.py ├── trainer.py ├── evaluator.py ├── snapshot_db.py └── augment.py`
+2. **Add Poetry extras / venv deps**  
+   * `transformers`, `accelerate`, `datasets`, `tensorboard`, `scikit-image` (for flips / rotations).  
+   * Pin CUDA-compatible versions for 4090 (torch 2.3+cu121 today).
+3. **Schema bump for SQLite DB (or DuckDB)**  
+   * New tables: `run`, `run_example`, `clean_text`, `color_map`, `char_map`.  
+   * Foreign-key to existing `solve_id` so the GUI can trace back to the raw pair.
+
+---
+
+## Phase 1 – Unify grid → image (½ day)
+
+4. **Extract `GridImageBuilder` class** from current GUI drawing code; move to `cargia/common/grid_image.py`.  
+   * Signature: `build(grid: list[list[int]], color_map: dict[int, Tuple[int,int,int]], size_px=448) -> PIL.Image`.  
+   * Add unit test asserting identical pixels for old vs new path.
+5. **Add resolution adaptor**  
+   * Gemma3-vision encoder is 448 × 448; insert `letterbox_or_center_crop(img, 448)` utility.
+
+---
+
+## Phase 2 – Cleaning pass (1 day)
+
+6. **`clean_text.py` script**  
+   * Streams raw thoughts → Gemma3 in batch mode, returns “grammar-fixed” text.  
+   * Idempotently fills `clean_text` column; skip rows already cleaned.
+7. **Integration in GUI**  
+   * “Run Text Cleaner” option under **Settings**; shows progress bar.
+
+---
+
+## Phase 3 – Data-augmentation toolkit (2 days)
+
+8. **Color invariance** (`augment.color_maps`)  
+   * Generate N color maps obeying ΔE > 25 (CIELAB) for pair-wise distinctness.  
+   * Helper to swap colors in both image and **cleaned thoughts** via regex + lookup table.  
+   * Unit tests over 20 random maps → asserts visual diff and text consistency.
+9. **Character invariance** (`augment.char_maps`)  
+   * Create random bijection from digits 0-9 → [A–Z][a-z][!@#…].  
+   * Rewrite JSON grids and answer strings on the fly; thoughts unchanged.
+10. **Spatial transforms** (`augment.spatial`) – **optional v1**  
+    * Functions for `rotate90/180/270`, `flip_h`, `flip_v`.  
+    * Emits mapping dict so evaluation can invert transform.  
+    * Leave text-rewrite via LLM for a later milestone.
+
+---
+
+## Phase 4 – Training engine (3 days)
+
+11. **`trainer.py`**  
+    * Accepts `TrainingConfig` dataclass (batch_size, lr, epochs, augments, etc.).  
+    * Builds 🤗 `Dataset` referencing on-disk grids & cleaned thoughts; applies transforms.  
+    * Wrap Gemma3 with vision-text adapter (`GemmaForConditionalGeneration.from_pretrained` + LoRA).  
+    * Loss:  
+      ```python
+      total_loss = text_loss + λ * grid_loss
+      grid_loss = cross_entropy(final_answer_logits, gt_grid_tokens)
+      ```  
+      (Start with λ ≈ 1.0; expose in config.)
+12. **Intermediate-supervision toggle**  
+    * If `config.intermediate_weight>0`, also compute CE at each decoder layer output; weight by α.
+13. **`evaluator.py`**  
+    * During `validation_step`:  
+      * Decode grid tokens → JSON grid.  
+      * **Exact-match** metric = 1/0.  
+      * `tile_diff = sum(pred!=gt)` for diagnostics.  
+      * Push example (input grid image, pred image, GT image, correctness, tile_diff, thoughts) to `snapshot_db`.
+14. **`snapshot_db.py`**  
+    * Thin DAL around table `run_example`; inserts every *k* validation steps (configurable).
+15. **TensorBoard logging** – scalars (loss, EM accuracy) + sampled images.
+
+---
+
+## Phase 5 – GUI “Training” tab (2 days)
+
+16. **Create `TrainingScreen` QWidget**
+
+    | Left Pane | Right Pane |
+    |-----------|-----------|
+    | Config form (batch size, epochs, λ, aug flags) | Live examples viewer (scrolling) |
+    | “Start / Stop / Resume” buttons | Run status, ETA, loss, EM accuracy |
+
+17. **Spawn trainer** with `multiprocessing.Process` so the GUI stays responsive.  
+    * Use a `multiprocessing.Queue` to push snapshots (rows from `run_example`) back to GUI.
+18. **Example viewer widget**  
+    * Re-use `PairWidget` style: input + predicted + GT + text; border = green/red for correctness.
+19. **Graceful stop** – set `trainer.stop_event`; save checkpoint & finish batch.
+
+---
+
+## Phase 6 – Evaluation & serving utilities (1 day)
+
+20. **`evaluate_task.py`** – CLI that loads a fine-tuned checkpoint, runs on unseen tasks, outputs JSON of guesses + metrics.
+21. **Export script** to save best checkpoint as `gguf` (if using Gemma-quant) for later ONNX/RAG.
+
+---
+
+## Phase 7 – Testing & CI (ongoing)
+
+22. **PyTest battery**  
+    * Grid image parity  
+    * Color/char augment round-trip  
+    * Clean-text idempotence  
+    * Trainer smoke-test (1 batch, CPU)
+23. **GitHub Actions matrix** (cpu only) running lint + tests.
+
+---
+
+## Phase 8 – Stretch goals
+
+24. **LLM-driven text rewrite for spatial aug**  
+    * Prompt Gemma3: “Rewrite the description as if the grid were rotated 90° CW.”  
+    * Verify with few-shot examples; add to augmentation pipeline.
+25. **Active learning loop**  
+    * During training, surface hardest examples (high loss) back to “Label” tab for human comments.
+
+---
+
+### Suggested timeline (∼10 focused days)
+
+| Day | Goal |
+|-----|------|
+| 0 | Plumbing & schema |
+| 1 | GridImageBuilder |
+| 2 | Cleaning pass |
+| 3-4 | Augmentation toolkit |
+| 5-7 | Trainer + evaluator |
+| 8-9 | Training GUI |
+| 10 | Tests, polish |
+
+Feel free to reorder minor steps, but keep the **dependency chain** intact (clean data ➟ aug ➟ trainer ➟ GUI). Each phase leaves the system in a runnable state, so you can branch off if priorities shift.
+

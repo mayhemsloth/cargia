@@ -1,0 +1,541 @@
+{
+  "metadata": {
+    "solve_id": 113,
+    "task_id": "aabf363d",
+    "user_id": "Thomas",
+    "solve_duration_seconds": 377,
+    "start_time": "2025-06-04T18:41:42.648746",
+    "end_time": "2025-06-04T18:48:00.236004",
+    "export_timestamp": "2025-10-03T00:26:00.687874",
+    "export_version": "1.0"
+  },
+  "arc_agi_task": {
+    "pairs": {
+      "a": {
+        "input": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            3,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            3,
+            3,
+            3,
+            0,
+            0
+          ],
+          [
+            0,
+            3,
+            3,
+            3,
+            3,
+            0,
+            0
+          ],
+          [
+            0,
+            3,
+            3,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            3,
+            3,
+            0,
+            0,
+            0
+          ],
+          [
+            6,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "output": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            6,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            6,
+            6,
+            6,
+            0,
+            0
+          ],
+          [
+            0,
+            6,
+            6,
+            6,
+            6,
+            0,
+            0
+          ],
+          [
+            0,
+            6,
+            6,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            6,
+            6,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ]
+      },
+      "b": {
+        "input": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            2,
+            2,
+            2,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            2,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            2,
+            2,
+            2,
+            2,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            2,
+            2,
+            2,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            2,
+            0,
+            0,
+            0
+          ],
+          [
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "output": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            4,
+            4,
+            4,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            4,
+            4,
+            4,
+            4,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            4,
+            4,
+            4,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ]
+      },
+      "c": {
+        "input": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            8,
+            8,
+            8,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            8,
+            8,
+            8,
+            8,
+            8,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            8,
+            8,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            8,
+            8,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            8,
+            8,
+            8,
+            0,
+            0
+          ],
+          [
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "output": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            2,
+            2,
+            2,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            2,
+            2,
+            2,
+            2,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            2,
+            2,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            2,
+            2,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            2,
+            2,
+            2,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "default_splits": {
+      "train": [
+        "a",
+        "b"
+      ],
+      "test": [
+        "c"
+      ]
+    }
+  },
+  "solve_configuration": {
+    "order_map_type": "default",
+    "order_map": {
+      "train": [
+        "a",
+        "b"
+      ],
+      "test": [
+        "c"
+      ]
+    },
+    "color_map": {
+      "0": {
+        "name": "black",
+        "color": [
+          0,
+          0,
+          0
+        ]
+      },
+      "1": {
+        "name": "blue",
+        "color": [
+          0,
+          70,
+          227
+        ]
+      },
+      "2": {
+        "name": "red",
+        "color": [
+          255,
+          65,
+          54
+        ]
+      },
+      "3": {
+        "name": "green",
+        "color": [
+          46,
+          204,
+          64
+        ]
+      },
+      "4": {
+        "name": "yellow",
+        "color": [
+          255,
+          220,
+          0
+        ]
+      },
+      "5": {
+        "name": "grey",
+        "color": [
+          170,
+          170,
+          170
+        ]
+      },
+      "6": {
+        "name": "pink",
+        "color": [
+          240,
+          18,
+          190
+        ]
+      },
+      "7": {
+        "name": "orange",
+        "color": [
+          255,
+          133,
+          27
+        ]
+      },
+      "8": {
+        "name": "aqua",
+        "color": [
+          15,
+          230,
+          253
+        ]
+      },
+      "9": {
+        "name": "purple",
+        "color": [
+          128,
+          0,
+          255
+        ]
+      }
+    },
+    "metadata_labels": {
+      "Rotational": true,
+      "Horizontal": true,
+      "Vertical": true,
+      "Translation": false,
+      "Invertable": false
+    }
+  },
+  "training_pairs": [
+    "a",
+    "b"
+  ],
+  "test_pairs": [
+    "c"
+  ],
+  "thoughts": {
+    "a": "The input and output grids are the same sizes. The input grid has a black color background and a green object in it. There's also a single pink tile in the bottom left corner of the input grid. The output grid looks very similar to the input grid, with the exception that the object has been changed from a green color to a pink color. Object shape has not changed. The ink color that was in the bottom left of the input grid has gone away and is now just the background color. Seems like the single tile in the bottom left corner is acting as an indicator tile to tell us to what color the object in the input grid shoudl be changed to to construct the output grid. That's the hypothesis is the following. The input grid will have some color background, probably black, and an object of some shape that is a non-background color. there will be a single tile in the bottom left corner that is also some non-background color. This is the indicator tile. In order to construct the output grid, we must copy over the input grid exactly as is, with the exception of changing the color of the object to the color of the indicator tile. Additionally, the indicator tile is removed from the output grid and is repalced with the background color.",
+    "b": "The input grid contains a black color background and a red object in it. The bottom left corner contains a single yellow tile. According to the hypothesis, This single tile in the bottom left corner is the indicator tile. In order to construct the output grid, we need to change the color of the shape object in the input grid to the color of the indicator tile. The indicator tile in the output grid also goes away. Otherwise the input grid is the same size and the object's shape stays exactly the same. It's just the color that changes. Because this is exactly what we see in the output grid, the hypothesis holds.",
+    "c": "We apply the hypothesis here. The input grid contains a black color background and an aqua object of some shape. The bottom left corner also has a red tile in it. According to the hypothesis, this red tile is the indicator tile and tells us to what color we must change the aqua color object. In order to construct the output grid, we must copy over the input grid as is, with the two exceptions of changing the color of the shape to the indicator tile, which in this case is red, and removing the indicator tile from the bottom left corner and replacing it with the background color of black. Note that the objects shape nor location does not change at all, just the color, in this case from aqua to red."
+  },
+  "summary": {
+    "total_training_pairs": 2,
+    "total_test_pairs": 1,
+    "total_thoughts": 3,
+    "has_cleaned_thoughts": true,
+    "has_arc_agi_task": true
+  }
+}

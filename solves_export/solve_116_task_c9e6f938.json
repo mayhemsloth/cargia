@@ -1,0 +1,329 @@
+{
+  "metadata": {
+    "solve_id": 116,
+    "task_id": "c9e6f938",
+    "user_id": "Thomas",
+    "solve_duration_seconds": 647,
+    "start_time": "2025-06-05T18:20:22.736149",
+    "end_time": "2025-06-05T18:31:10.140765",
+    "export_timestamp": "2025-10-03T00:26:00.697874",
+    "export_version": "1.0"
+  },
+  "arc_agi_task": {
+    "pairs": {
+      "a": {
+        "input": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            7,
+            7
+          ],
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        "output": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            7,
+            7,
+            7,
+            7,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ]
+      },
+      "b": {
+        "input": [
+          [
+            0,
+            7,
+            0
+          ],
+          [
+            0,
+            0,
+            7
+          ],
+          [
+            0,
+            7,
+            7
+          ]
+        ],
+        "output": [
+          [
+            0,
+            7,
+            0,
+            0,
+            7,
+            0
+          ],
+          [
+            0,
+            0,
+            7,
+            7,
+            0,
+            0
+          ],
+          [
+            0,
+            7,
+            7,
+            7,
+            7,
+            0
+          ]
+        ]
+      },
+      "c": {
+        "input": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            7,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        "output": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            7,
+            0,
+            0,
+            0,
+            0,
+            7
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ]
+      },
+      "d": {
+        "input": [
+          [
+            7,
+            7,
+            0
+          ],
+          [
+            0,
+            7,
+            0
+          ],
+          [
+            0,
+            0,
+            7
+          ]
+        ],
+        "output": [
+          [
+            7,
+            7,
+            0,
+            0,
+            7,
+            7
+          ],
+          [
+            0,
+            7,
+            0,
+            0,
+            7,
+            0
+          ],
+          [
+            0,
+            0,
+            7,
+            7,
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "default_splits": {
+      "train": [
+        "a",
+        "b",
+        "c"
+      ],
+      "test": [
+        "d"
+      ]
+    }
+  },
+  "solve_configuration": {
+    "order_map_type": "default",
+    "order_map": {
+      "train": [
+        "a",
+        "b",
+        "c"
+      ],
+      "test": [
+        "d"
+      ]
+    },
+    "color_map": {
+      "0": {
+        "name": "black",
+        "color": [
+          0,
+          0,
+          0
+        ]
+      },
+      "1": {
+        "name": "blue",
+        "color": [
+          0,
+          70,
+          227
+        ]
+      },
+      "2": {
+        "name": "red",
+        "color": [
+          255,
+          65,
+          54
+        ]
+      },
+      "3": {
+        "name": "green",
+        "color": [
+          46,
+          204,
+          64
+        ]
+      },
+      "4": {
+        "name": "yellow",
+        "color": [
+          255,
+          220,
+          0
+        ]
+      },
+      "5": {
+        "name": "grey",
+        "color": [
+          170,
+          170,
+          170
+        ]
+      },
+      "6": {
+        "name": "pink",
+        "color": [
+          240,
+          18,
+          190
+        ]
+      },
+      "7": {
+        "name": "orange",
+        "color": [
+          255,
+          133,
+          27
+        ]
+      },
+      "8": {
+        "name": "aqua",
+        "color": [
+          15,
+          230,
+          253
+        ]
+      },
+      "9": {
+        "name": "purple",
+        "color": [
+          128,
+          0,
+          255
+        ]
+      }
+    },
+    "metadata_labels": {
+      "Rotational": true,
+      "Horizontal": true,
+      "Vertical": true,
+      "Translation": false,
+      "Invertable": false
+    }
+  },
+  "training_pairs": [
+    "a",
+    "b",
+    "c"
+  ],
+  "test_pairs": [
+    "d"
+  ],
+  "thoughts": {
+    "a": "The input and output grids are different sizes. The input grid is a 3 by 3 square, and the output grid is 6 columns wide and 3 rows tall, which can also be described as two 3x3 squares placed next to each other. The input grid has some black color background tiles with two orange tiles. The output grid also has a black color background with some orange tiles. Because the output grid is twice the size of the input grid, and because the output grid looks pretty similar to the input grid, there is likely some type of copying of the input involved in the transformation rule. We notice in this case that the left half of the output grid is an exact copy of the input grid, and the right half of the output grid is a mirrored copy of the input grid. Specifically, the right half of the output grid is the input grid that has been mirrored over the right edge of the input grid. Thus the hypothesis is the following. Input grid will be of some size and contain some color tiles. In order to construct the output grid, we simply double the width of the input grid and copy the input grid into the left half of the output grid, and mirror the input grid over its right edge and place that into the right half of the output grid. Note that this construction necessarily means that the output grid will have mirror symmetry about the vertical center axis of the output grid.",
+    "b": "Input grid is a 3x3 square with some number of orange and black tiles. According to the hypothesis, the output grid will be twice as wide as the input grid. In order to construct the output grid, we need to copy over the input grid into the left half side of the output grid, and then mirror the input grid over its right side edge and place that mirrored copy into the right half of the output grid. Because this is exactly what we see in the output grid the hypothesis holds.",
+    "c": "The input grid is again a 3x3 square with some orange and black tiles in it. According to the hypothesis, the output grid will be twice as wide as the input grid. So in this case six columns wide, and three rows tall. In order to construct the output grid, we need to copy over the input grid into the left half side of the output grid, and then mirror the input grid over its right side edge and place that mirrored copy into the right half of the output grid. In this case, nearly the entire output grid will be black color background with the exception of two orange tiles, in the middle row on the far left and far right of the output grid. Because this is exactly what we see in the output grid, the hypothesis holds.",
+    "d": "We apply the hypothesis here. The input grid is a 3x3 square with some orange and black tiles in it. According to the hypothesis, the output grid needs to be twice as wide as the input grid. In order to construct the output grid, we need to copy over the input grid into the left half side of the output grid, and then mirror the input grid over its right side edge and place that mirrored copy into the right half of the output grid. Note that when this happens, the final output grid will have a mirror symmetry about its center vertical axis."
+  },
+  "summary": {
+    "total_training_pairs": 3,
+    "total_test_pairs": 1,
+    "total_thoughts": 4,
+    "has_cleaned_thoughts": true,
+    "has_arc_agi_task": true
+  }
+}

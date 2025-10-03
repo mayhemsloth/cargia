@@ -1,0 +1,413 @@
+{
+  "metadata": {
+    "solve_id": 96,
+    "task_id": "f76d97a5",
+    "user_id": "Thomas",
+    "solve_duration_seconds": 510,
+    "start_time": "2025-05-28T16:14:24.663551",
+    "end_time": "2025-05-28T16:22:54.713388",
+    "export_timestamp": "2025-10-03T00:26:00.624877",
+    "export_version": "1.0"
+  },
+  "arc_agi_task": {
+    "pairs": {
+      "a": {
+        "input": [
+          [
+            5,
+            5,
+            6,
+            6,
+            6
+          ],
+          [
+            6,
+            5,
+            5,
+            6,
+            6
+          ],
+          [
+            6,
+            6,
+            5,
+            5,
+            6
+          ],
+          [
+            6,
+            6,
+            6,
+            5,
+            5
+          ],
+          [
+            5,
+            6,
+            6,
+            6,
+            5
+          ]
+        ],
+        "output": [
+          [
+            6,
+            6,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            6,
+            6,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            6,
+            6,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            6,
+            6
+          ],
+          [
+            6,
+            0,
+            0,
+            0,
+            6
+          ]
+        ]
+      },
+      "b": {
+        "input": [
+          [
+            4,
+            5,
+            4
+          ],
+          [
+            5,
+            5,
+            5
+          ],
+          [
+            4,
+            5,
+            4
+          ]
+        ],
+        "output": [
+          [
+            0,
+            4,
+            0
+          ],
+          [
+            4,
+            4,
+            4
+          ],
+          [
+            0,
+            4,
+            0
+          ]
+        ]
+      },
+      "c": {
+        "input": [
+          [
+            9,
+            5,
+            9,
+            9,
+            9
+          ],
+          [
+            9,
+            9,
+            5,
+            5,
+            9
+          ],
+          [
+            9,
+            5,
+            9,
+            9,
+            9
+          ],
+          [
+            9,
+            9,
+            5,
+            9,
+            9
+          ],
+          [
+            9,
+            9,
+            9,
+            5,
+            5
+          ]
+        ],
+        "output": [
+          [
+            0,
+            9,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            9,
+            9,
+            0
+          ],
+          [
+            0,
+            9,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            9,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            9,
+            9
+          ]
+        ]
+      },
+      "d": {
+        "input": [
+          [
+            3,
+            3,
+            3,
+            5,
+            3
+          ],
+          [
+            3,
+            5,
+            3,
+            3,
+            3
+          ],
+          [
+            3,
+            5,
+            5,
+            3,
+            5
+          ],
+          [
+            3,
+            3,
+            3,
+            5,
+            3
+          ],
+          [
+            5,
+            5,
+            5,
+            3,
+            3
+          ]
+        ],
+        "output": [
+          [
+            0,
+            0,
+            0,
+            3,
+            0
+          ],
+          [
+            0,
+            3,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            3,
+            3,
+            0,
+            3
+          ],
+          [
+            0,
+            0,
+            0,
+            3,
+            0
+          ],
+          [
+            3,
+            3,
+            3,
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "default_splits": {
+      "train": [
+        "a",
+        "b",
+        "c"
+      ],
+      "test": [
+        "d"
+      ]
+    }
+  },
+  "solve_configuration": {
+    "order_map_type": "default",
+    "order_map": {
+      "train": [
+        "a",
+        "b",
+        "c"
+      ],
+      "test": [
+        "d"
+      ]
+    },
+    "color_map": {
+      "0": {
+        "name": "black",
+        "color": [
+          0,
+          0,
+          0
+        ]
+      },
+      "1": {
+        "name": "blue",
+        "color": [
+          0,
+          70,
+          227
+        ]
+      },
+      "2": {
+        "name": "red",
+        "color": [
+          255,
+          65,
+          54
+        ]
+      },
+      "3": {
+        "name": "green",
+        "color": [
+          46,
+          204,
+          64
+        ]
+      },
+      "4": {
+        "name": "yellow",
+        "color": [
+          255,
+          220,
+          0
+        ]
+      },
+      "5": {
+        "name": "grey",
+        "color": [
+          170,
+          170,
+          170
+        ]
+      },
+      "6": {
+        "name": "pink",
+        "color": [
+          240,
+          18,
+          190
+        ]
+      },
+      "7": {
+        "name": "orange",
+        "color": [
+          255,
+          133,
+          27
+        ]
+      },
+      "8": {
+        "name": "aqua",
+        "color": [
+          15,
+          230,
+          253
+        ]
+      },
+      "9": {
+        "name": "purple",
+        "color": [
+          128,
+          0,
+          255
+        ]
+      }
+    },
+    "metadata_labels": {
+      "Rotational": true,
+      "Horizontal": true,
+      "Vertical": true,
+      "Translation": false,
+      "Invertable": false
+    }
+  },
+  "training_pairs": [
+    "a",
+    "b",
+    "c"
+  ],
+  "test_pairs": [
+    "d"
+  ],
+  "thoughts": {
+    "a": "The input and output grids are the same size. The input grid contains pink and gray tiles in a diagonal stripey fashion. The output grid contains pink and black tiles in the same type of diagonal stripy fashion. The objects and the shapes of the objects in the input and output grid are exactly the same, but their colors have changed. All of the pink tiles that existed in the input grid are now black in the output grid and all of the gray tiles that existed in the input grid are now pink in the output grid. Thus, the hypothesis is of the following. The input grid will contain some objects of some shapes, probably gray and one other color, in this case pink. In order to construct the output grid, we need to change the color of all the gray tiles to the other color that exists in the input grid and change all of the other colors into black. Another training pair would be nice to strengthen this hypothesis.",
+    "b": "The input and output grids are again the same size. The input grid contains some number of gray tiles and some number of some other color tiles, in this case yellow. According to the hypothesis, in order to construct the output grid, we need to change the colors of all the gray tiles to the other color that is present in the input grid, in this case yellow, and the colors of all the yellow tiles to black. Because this is exactly what we see in the output grid, the hypothesis holds and we are more confident now in the hypothesis.",
+    "c": "The input grid as expected contains some number of gray tiles and some other color tiles. In this case, we have a bunch of purple tiles. According to the hypothesis, in order to construct the output grid, we need to change the colors of all of the gray tiles to purple, the other color present in the input grid, and then change all of the purple tiles to black in the output grid. Because the output grid is exactly what we expect it to be the hypothesis holds. Note again that the shape of the objects do not change between the input and output grids, only their colors change.",
+    "d": "We applied the hypothesis here. The input grid has a bunch of gray tiles and Green tiles. The green color is thus identified as the non-gray tile, or the other colored tile in the input grid. According to the hypothesis, in the output grid, the non-gray tiles need to be changed to black, and all of the gray tiles in the input grid need to be changed to the non-gray color, which in this case is green. Again, the shapes of the objects or their relative locations don't change at all, but just their colors are swapped according to the hypothesis."
+  },
+  "summary": {
+    "total_training_pairs": 3,
+    "total_test_pairs": 1,
+    "total_thoughts": 4,
+    "has_cleaned_thoughts": true,
+    "has_arc_agi_task": true
+  }
+}

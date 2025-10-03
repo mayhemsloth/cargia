@@ -1,0 +1,341 @@
+{
+  "metadata": {
+    "solve_id": 72,
+    "task_id": "c8f0f002",
+    "user_id": "Thomas",
+    "solve_duration_seconds": 820,
+    "start_time": "2025-05-22T20:09:16.263605",
+    "end_time": "2025-05-22T20:22:56.344752",
+    "export_timestamp": "2025-10-03T00:26:00.539874",
+    "export_version": "1.0"
+  },
+  "arc_agi_task": {
+    "pairs": {
+      "a": {
+        "input": [
+          [
+            7,
+            7,
+            7,
+            1
+          ],
+          [
+            1,
+            8,
+            1,
+            7
+          ],
+          [
+            7,
+            1,
+            1,
+            7
+          ]
+        ],
+        "output": [
+          [
+            5,
+            5,
+            5,
+            1
+          ],
+          [
+            1,
+            8,
+            1,
+            5
+          ],
+          [
+            5,
+            1,
+            1,
+            5
+          ]
+        ]
+      },
+      "b": {
+        "input": [
+          [
+            1,
+            8,
+            8,
+            7,
+            7,
+            8
+          ],
+          [
+            1,
+            1,
+            7,
+            7,
+            1,
+            8
+          ],
+          [
+            7,
+            1,
+            1,
+            7,
+            7,
+            8
+          ]
+        ],
+        "output": [
+          [
+            1,
+            8,
+            8,
+            5,
+            5,
+            8
+          ],
+          [
+            1,
+            1,
+            5,
+            5,
+            1,
+            8
+          ],
+          [
+            5,
+            1,
+            1,
+            5,
+            5,
+            8
+          ]
+        ]
+      },
+      "c": {
+        "input": [
+          [
+            1,
+            8,
+            1,
+            7,
+            1
+          ],
+          [
+            7,
+            8,
+            8,
+            1,
+            1
+          ],
+          [
+            7,
+            1,
+            8,
+            8,
+            7
+          ]
+        ],
+        "output": [
+          [
+            1,
+            8,
+            1,
+            5,
+            1
+          ],
+          [
+            5,
+            8,
+            8,
+            1,
+            1
+          ],
+          [
+            5,
+            1,
+            8,
+            8,
+            5
+          ]
+        ]
+      },
+      "d": {
+        "input": [
+          [
+            1,
+            7,
+            7,
+            1,
+            7
+          ],
+          [
+            8,
+            1,
+            7,
+            7,
+            7
+          ],
+          [
+            8,
+            7,
+            1,
+            7,
+            8
+          ]
+        ],
+        "output": [
+          [
+            1,
+            5,
+            5,
+            1,
+            5
+          ],
+          [
+            8,
+            1,
+            5,
+            5,
+            5
+          ],
+          [
+            8,
+            5,
+            1,
+            5,
+            8
+          ]
+        ]
+      }
+    },
+    "default_splits": {
+      "train": [
+        "a",
+        "b",
+        "c"
+      ],
+      "test": [
+        "d"
+      ]
+    }
+  },
+  "solve_configuration": {
+    "order_map_type": "default",
+    "order_map": {
+      "train": [
+        "a",
+        "b",
+        "c"
+      ],
+      "test": [
+        "d"
+      ]
+    },
+    "color_map": {
+      "0": {
+        "name": "black",
+        "color": [
+          0,
+          0,
+          0
+        ]
+      },
+      "1": {
+        "name": "blue",
+        "color": [
+          0,
+          70,
+          227
+        ]
+      },
+      "2": {
+        "name": "red",
+        "color": [
+          255,
+          65,
+          54
+        ]
+      },
+      "3": {
+        "name": "green",
+        "color": [
+          46,
+          204,
+          64
+        ]
+      },
+      "4": {
+        "name": "yellow",
+        "color": [
+          255,
+          220,
+          0
+        ]
+      },
+      "5": {
+        "name": "grey",
+        "color": [
+          170,
+          170,
+          170
+        ]
+      },
+      "6": {
+        "name": "pink",
+        "color": [
+          240,
+          18,
+          190
+        ]
+      },
+      "7": {
+        "name": "orange",
+        "color": [
+          255,
+          133,
+          27
+        ]
+      },
+      "8": {
+        "name": "aqua",
+        "color": [
+          15,
+          230,
+          253
+        ]
+      },
+      "9": {
+        "name": "purple",
+        "color": [
+          128,
+          0,
+          255
+        ]
+      }
+    },
+    "metadata_labels": {
+      "Rotational": true,
+      "Horizontal": true,
+      "Vertical": true,
+      "Translation": false,
+      "Invertable": true
+    }
+  },
+  "training_pairs": [
+    "a",
+    "b",
+    "c"
+  ],
+  "test_pairs": [
+    "d"
+  ],
+  "thoughts": {
+    "a": "Input and output grids are the same sizes. The input grid has a variety of colored tiles, orange, blue, and aqua. The output grid also has a variety of color tiles, Blue, aqua, and gray. We notice that the locations of the aqua and blue tiles are exactly the same in the input grid and output grid. Additionally, we notice that all the orange tiles of the input grid have effectively been changed into gray tiles. Thus, the hypothesis is the following. Input grid will be some size, And any orange tiles that are located in the input grid need to be changed to gray in the output grid. Otherwise the output grid is the exact same as the input grid. Note that this hypothesis might be wrong if there is some additional wrinkle or rule that is used to select which color to actually change into gray. For example, orange also happens to have the most number of tiles in the input grid. We will need additional training pairs to support or deny this hypothesis.",
+    "b": "The input grid is again a variety of colors, in this case, orange, blue, and aqua. According to the hypothesis, the output grid should be an exact copy of the input grid, except that the orange tiles have been changed to gray. Additionally, we are aware that there could be some selection rule that is selecting the orange tiles, And in this case, the orange tiles are, again, the most number of colored tiles. Because the output grid is exactly what we expect it to be with all the orange tiles changed to gray, the hypothesis holds.",
+    "c": "The input grid is again another grid that contains a variety of Blue, orange, and aqua tiles. According to the hypothesis, Output grid should be an exact copy of the input grid with the exception that the orange tiles are changed to gray. In this pair, the orange tiles are not the most number of tiles. of that color in the input grid, and so this further supports the hypothesis that the orange tiles should always be changed to gray, regardless of anything else or their location within the input grid. Thus the hypothesis holds.",
+    "d": "We apply the hypothesis here. Input grid is a variety of aqua, orange, and blue tiles. According to the hypothesis, the output grid should be an exact copy of the input grid with the exception that all the orange tiles have been changed to gray."
+  },
+  "summary": {
+    "total_training_pairs": 3,
+    "total_test_pairs": 1,
+    "total_thoughts": 4,
+    "has_cleaned_thoughts": true,
+    "has_arc_agi_task": true
+  }
+}

@@ -1,0 +1,729 @@
+{
+  "metadata": {
+    "solve_id": 12,
+    "task_id": "32e9702f",
+    "user_id": "Thomas",
+    "solve_duration_seconds": 0,
+    "start_time": "2025-05-09T19:11:35.279283",
+    "end_time": "2025-05-09T19:11:35.306288",
+    "export_timestamp": "2025-10-03T00:26:00.349365",
+    "export_version": "1.0"
+  },
+  "arc_agi_task": {
+    "pairs": {
+      "a": {
+        "input": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            3,
+            3,
+            3,
+            3,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            3,
+            3,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "output": [
+          [
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5
+          ],
+          [
+            5,
+            3,
+            3,
+            3,
+            3,
+            5,
+            5,
+            5
+          ],
+          [
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5
+          ],
+          [
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5
+          ],
+          [
+            3,
+            3,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5
+          ],
+          [
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5
+          ],
+          [
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5
+          ],
+          [
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5
+          ]
+        ]
+      },
+      "b": {
+        "input": [
+          [
+            4,
+            4,
+            4
+          ],
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        "output": [
+          [
+            4,
+            4,
+            5
+          ],
+          [
+            5,
+            5,
+            5
+          ],
+          [
+            5,
+            5,
+            5
+          ]
+        ]
+      },
+      "c": {
+        "input": [
+          [
+            7,
+            7,
+            7,
+            7,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            7,
+            7,
+            7,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            7,
+            7,
+            7,
+            7,
+            7,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "output": [
+          [
+            7,
+            7,
+            7,
+            5,
+            5,
+            5,
+            5
+          ],
+          [
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5
+          ],
+          [
+            5,
+            7,
+            7,
+            7,
+            5,
+            5,
+            5
+          ],
+          [
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5
+          ],
+          [
+            7,
+            7,
+            7,
+            7,
+            7,
+            5,
+            5
+          ],
+          [
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5
+          ],
+          [
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5
+          ]
+        ]
+      },
+      "d": {
+        "input": [
+          [
+            0,
+            0,
+            6,
+            6,
+            6,
+            6,
+            6,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            6,
+            6,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            6,
+            6,
+            6,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "output": [
+          [
+            5,
+            6,
+            6,
+            6,
+            6,
+            6,
+            5,
+            5,
+            5,
+            5
+          ],
+          [
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5
+          ],
+          [
+            5,
+            5,
+            5,
+            5,
+            5,
+            6,
+            6,
+            5,
+            5,
+            5
+          ],
+          [
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5
+          ],
+          [
+            6,
+            6,
+            6,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5
+          ],
+          [
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5
+          ],
+          [
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5
+          ],
+          [
+            5,
+            5,
+            5,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            5
+          ],
+          [
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5
+          ],
+          [
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5
+          ]
+        ]
+      }
+    },
+    "default_splits": {
+      "train": [
+        "a",
+        "b",
+        "c"
+      ],
+      "test": [
+        "d"
+      ]
+    }
+  },
+  "solve_configuration": {
+    "order_map_type": "default",
+    "order_map": {
+      "train": [
+        "a",
+        "b",
+        "c"
+      ],
+      "test": [
+        "d"
+      ]
+    },
+    "color_map": {
+      "0": {
+        "name": "black",
+        "color": [
+          0,
+          0,
+          0
+        ]
+      },
+      "1": {
+        "name": "blue",
+        "color": [
+          0,
+          70,
+          227
+        ]
+      },
+      "2": {
+        "name": "red",
+        "color": [
+          255,
+          65,
+          54
+        ]
+      },
+      "3": {
+        "name": "green",
+        "color": [
+          46,
+          204,
+          64
+        ]
+      },
+      "4": {
+        "name": "yellow",
+        "color": [
+          255,
+          220,
+          0
+        ]
+      },
+      "5": {
+        "name": "grey",
+        "color": [
+          170,
+          170,
+          170
+        ]
+      },
+      "6": {
+        "name": "pink",
+        "color": [
+          240,
+          18,
+          190
+        ]
+      },
+      "7": {
+        "name": "orange",
+        "color": [
+          255,
+          133,
+          27
+        ]
+      },
+      "8": {
+        "name": "aqua",
+        "color": [
+          15,
+          230,
+          253
+        ]
+      },
+      "9": {
+        "name": "purple",
+        "color": [
+          128,
+          0,
+          255
+        ]
+      }
+    },
+    "metadata_labels": {
+      "Rotational": true,
+      "Horizontal": true,
+      "Vertical": true,
+      "Translation": false,
+      "Invertable": false
+    }
+  },
+  "training_pairs": [
+    "a",
+    "b",
+    "c"
+  ],
+  "test_pairs": [
+    "d"
+  ],
+  "thoughts": {
+    "a": "The input grid and the output grids are the same size. We noticed that In the input grid, The background seems to be black, and in the output grid, the background seems to be gray. There are two objects that are green horizontal lines. Both of these green horizontal lines have been moved. one spot to the right. and otherwise They are exactly the same, copied from the input grid to the output grid with that one exception. Hypothesis is that the input grid will have a black background and the output grid will have a gray background and there will be the same size. and then objects that are different colors than those two colors. Will need to be moved. to the right by a single tile.",
+    "b": "In this pair, we see that the input grid and the output grid are the same size again, and the input grid has a background of black, and the output grid has a background of gray. there is a yellow horizontal line object at the top. of the input grid. With applying the hypothesized rule. We need to move the yellow line to the left. In this case, the yellow line goes off the output grid and just disappears. Therefore, there are now two yellow tiles horizontally on the top row instead of three yellow tiles. This represents the yellow. horizontal line being moved one tile to the left. even though it's not included explicitly in the output grid. The output grid size stays the same as the input grid size.",
+    "c": "In this pair, we have again the background color of black and the other output grid background color being gray. We have three orange horizontal lines. each of which need to be moved one tile to the left. In the top row, horizontal orange line, we see that because it's already touching the edge of the grid it will effectively shrink by one. because it is moving outside of the output grid. and effectively disappearing. Note that the output grid does not expand to include this motion. The orange horizontal line simply gets shorter.",
+    "d": "we apply the hypothesis here. The background color is black. in the input grid and the background color is gray in the output grid. We identify four. Horizontal paint? Objects. Lines in this case. each of which need to be moved to the left one tile. in the same row in which they are located in the input grid. we need to ensure that if There are any horizontal pink lines that are touching the Input grid edge. they get decreased by one. But in this case, we do not identify any such pink horizontal lines."
+  },
+  "summary": {
+    "total_training_pairs": 3,
+    "total_test_pairs": 1,
+    "total_thoughts": 4,
+    "has_cleaned_thoughts": true,
+    "has_arc_agi_task": true
+  }
+}

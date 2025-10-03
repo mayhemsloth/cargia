@@ -4,20 +4,35 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cargia"
-version = "0.1.0"
+version = "1.0.0"
 description = "ARC-AGI Labeling Tool"
 authors = [
-    {name = "Thomas", email = "your.email@example.com"}
+    {name = "Thomas Hymel", email = "thomas.hymel@gmail.com"}
 ]
 requires-python = ">=3.8"
 dependencies = [
+    # Data collection dependencies
     "PyQt6",
     "numpy",
     "Pillow",
     "faster-whisper",
     "sounddevice",
     "huggingface-hub",
+    # Gemma3 model training dependencies
+    "torch>=2.3.0",
+    "transformers>=4.38.0",
+    "accelerate>=0.27.0",
+    "datasets>=2.17.0",
+    "tensorboard>=2.15.0",
+    "scikit-image>=0.22.0",
+    "peft",
+    "trl",
+    "bitsandbytes",
+    "sentencepiece",
+    "PyYAML",
 ]
+# NOTE: I also needed to grab triton-windows==3.1.0.post17 to enable Windows-usage of Gemma3,
+# you might need a different version of triton-windows to match whatever torch you are using
 
 [project.optional-dependencies]
 dev = [
