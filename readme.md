@@ -290,7 +290,7 @@ This project is designed for research and development in AI reasoning. Contribut
 
 ## 📄 License
 
-[Add your preferred license here]
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
@@ -299,5 +299,3 @@ This project is designed for research and development in AI reasoning. Contribut
 - **Hugging Face** for the transformers library and ecosystem
 
 ---
-
-*Cargia represents a comprehensive approach to ARC-AGI research, combining human expertise in data annotation with advanced machine learning techniques for training reasoning-capable AI systems.*
