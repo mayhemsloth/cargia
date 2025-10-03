@@ -1,0 +1,377 @@
+{
+  "metadata": {
+    "solve_id": 30,
+    "task_id": "b1948b0a",
+    "user_id": "Thomas",
+    "solve_duration_seconds": 1114,
+    "start_time": "2025-05-17T10:49:55.909577",
+    "end_time": "2025-05-17T11:08:30.265322",
+    "export_timestamp": "2025-10-03T00:26:00.396365",
+    "export_version": "1.0"
+  },
+  "arc_agi_task": {
+    "pairs": {
+      "a": {
+        "input": [
+          [
+            7,
+            7,
+            7,
+            6
+          ],
+          [
+            6,
+            6,
+            7,
+            6
+          ],
+          [
+            7,
+            7,
+            6,
+            7
+          ],
+          [
+            7,
+            6,
+            7,
+            7
+          ],
+          [
+            7,
+            6,
+            7,
+            6
+          ],
+          [
+            6,
+            6,
+            6,
+            7
+          ]
+        ],
+        "output": [
+          [
+            7,
+            7,
+            7,
+            2
+          ],
+          [
+            2,
+            2,
+            7,
+            2
+          ],
+          [
+            7,
+            7,
+            2,
+            7
+          ],
+          [
+            7,
+            2,
+            7,
+            7
+          ],
+          [
+            7,
+            2,
+            7,
+            2
+          ],
+          [
+            2,
+            2,
+            2,
+            7
+          ]
+        ]
+      },
+      "b": {
+        "input": [
+          [
+            6,
+            6,
+            7,
+            6
+          ],
+          [
+            6,
+            6,
+            7,
+            7
+          ],
+          [
+            7,
+            7,
+            6,
+            7
+          ]
+        ],
+        "output": [
+          [
+            2,
+            2,
+            7,
+            2
+          ],
+          [
+            2,
+            2,
+            7,
+            7
+          ],
+          [
+            7,
+            7,
+            2,
+            7
+          ]
+        ]
+      },
+      "c": {
+        "input": [
+          [
+            7,
+            7,
+            6,
+            6,
+            6,
+            6
+          ],
+          [
+            6,
+            7,
+            6,
+            7,
+            7,
+            7
+          ],
+          [
+            7,
+            6,
+            7,
+            7,
+            6,
+            7
+          ]
+        ],
+        "output": [
+          [
+            7,
+            7,
+            2,
+            2,
+            2,
+            2
+          ],
+          [
+            2,
+            7,
+            2,
+            7,
+            7,
+            7
+          ],
+          [
+            7,
+            2,
+            7,
+            7,
+            2,
+            7
+          ]
+        ]
+      },
+      "d": {
+        "input": [
+          [
+            6,
+            7,
+            7,
+            6
+          ],
+          [
+            6,
+            7,
+            6,
+            7
+          ],
+          [
+            7,
+            7,
+            7,
+            6
+          ],
+          [
+            7,
+            6,
+            7,
+            6
+          ]
+        ],
+        "output": [
+          [
+            2,
+            7,
+            7,
+            2
+          ],
+          [
+            2,
+            7,
+            2,
+            7
+          ],
+          [
+            7,
+            7,
+            7,
+            2
+          ],
+          [
+            7,
+            2,
+            7,
+            2
+          ]
+        ]
+      }
+    },
+    "default_splits": {
+      "train": [
+        "a",
+        "b",
+        "c"
+      ],
+      "test": [
+        "d"
+      ]
+    }
+  },
+  "solve_configuration": {
+    "order_map_type": "default",
+    "order_map": {
+      "train": [
+        "a",
+        "b",
+        "c"
+      ],
+      "test": [
+        "d"
+      ]
+    },
+    "color_map": {
+      "0": {
+        "name": "black",
+        "color": [
+          0,
+          0,
+          0
+        ]
+      },
+      "1": {
+        "name": "blue",
+        "color": [
+          0,
+          70,
+          227
+        ]
+      },
+      "2": {
+        "name": "red",
+        "color": [
+          255,
+          65,
+          54
+        ]
+      },
+      "3": {
+        "name": "green",
+        "color": [
+          46,
+          204,
+          64
+        ]
+      },
+      "4": {
+        "name": "yellow",
+        "color": [
+          255,
+          220,
+          0
+        ]
+      },
+      "5": {
+        "name": "grey",
+        "color": [
+          170,
+          170,
+          170
+        ]
+      },
+      "6": {
+        "name": "pink",
+        "color": [
+          240,
+          18,
+          190
+        ]
+      },
+      "7": {
+        "name": "orange",
+        "color": [
+          255,
+          133,
+          27
+        ]
+      },
+      "8": {
+        "name": "aqua",
+        "color": [
+          15,
+          230,
+          253
+        ]
+      },
+      "9": {
+        "name": "purple",
+        "color": [
+          128,
+          0,
+          255
+        ]
+      }
+    },
+    "metadata_labels": {
+      "Rotational": true,
+      "Horizontal": true,
+      "Vertical": true,
+      "Translation": false,
+      "Invertable": true
+    }
+  },
+  "training_pairs": [
+    "a",
+    "b",
+    "c"
+  ],
+  "test_pairs": [
+    "d"
+  ],
+  "thoughts": {
+    "a": "The input and output grids are the same sizes. The input grid has a variety of orange and pink tiles that are scattered interleaved within each other somewhat randomly. The output grid also has a variety of orange and red tiles that are scattered and interleaved within each other somewhat randomly. We notice that the location of the orange tiles in the input and output grids are exactly the same. and the location of the pink and red tiles are exactly the same. The hypothesis is that there will be an orange background color in the input grid and some other color scattered throughout that background color. In this pair, that color is pink. Those tiles are then changed to the color red in the output grid, in the exact location.",
+    "b": "The hypothesis holds. The input grid has scattered orange background tiles. with pink color tiles. The output grid is the same size and the orange tiles are located in the exact locations. but the pink tiles have turned into red tiles.",
+    "c": "The input grid and output grid are the same sizes, as expected, and the hypothesis holds. Wherever there are orange tiles in the input grid, the output grid must have orange tiles in that exact location. wherever there are pink tiles in the input grid, there must be red tiles in the output grid in the exact location of what used to be pink tiles in the input grid.",
+    "d": "We apply the hypothesis here. Wherever there are orange tiles in the input grid, there must be orange tiles in the output grid at the exact location. Wherever there are pink tiles in the input grid, there must be red tiles in the output grid at the exact location. The input and output grids are the same size."
+  },
+  "summary": {
+    "total_training_pairs": 3,
+    "total_test_pairs": 1,
+    "total_thoughts": 4,
+    "has_cleaned_thoughts": true,
+    "has_arc_agi_task": true
+  }
+}

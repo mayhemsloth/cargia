@@ -1,0 +1,589 @@
+{
+  "metadata": {
+    "solve_id": 1,
+    "task_id": "bd4472b8",
+    "user_id": "Thomas",
+    "solve_duration_seconds": 365,
+    "start_time": "2025-05-04T20:39:44.986820",
+    "end_time": "2025-05-04T20:45:50.725919",
+    "export_timestamp": "2025-10-03T00:26:00.322007",
+    "export_version": "1.0"
+  },
+  "arc_agi_task": {
+    "pairs": {
+      "a": {
+        "input": [
+          [
+            3,
+            2,
+            1,
+            4
+          ],
+          [
+            5,
+            5,
+            5,
+            5
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "output": [
+          [
+            3,
+            2,
+            1,
+            4
+          ],
+          [
+            5,
+            5,
+            5,
+            5
+          ],
+          [
+            3,
+            3,
+            3,
+            3
+          ],
+          [
+            2,
+            2,
+            2,
+            2
+          ],
+          [
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            4,
+            4,
+            4,
+            4
+          ],
+          [
+            3,
+            3,
+            3,
+            3
+          ],
+          [
+            2,
+            2,
+            2,
+            2
+          ],
+          [
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            4,
+            4,
+            4,
+            4
+          ]
+        ]
+      },
+      "b": {
+        "input": [
+          [
+            2,
+            1,
+            4
+          ],
+          [
+            5,
+            5,
+            5
+          ],
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        "output": [
+          [
+            2,
+            1,
+            4
+          ],
+          [
+            5,
+            5,
+            5
+          ],
+          [
+            2,
+            2,
+            2
+          ],
+          [
+            1,
+            1,
+            1
+          ],
+          [
+            4,
+            4,
+            4
+          ],
+          [
+            2,
+            2,
+            2
+          ],
+          [
+            1,
+            1,
+            1
+          ],
+          [
+            4,
+            4,
+            4
+          ]
+        ]
+      },
+      "c": {
+        "input": [
+          [
+            8,
+            3
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "output": [
+          [
+            8,
+            3
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            3,
+            3
+          ]
+        ]
+      },
+      "d": {
+        "input": [
+          [
+            1,
+            2,
+            3,
+            4,
+            8
+          ],
+          [
+            5,
+            5,
+            5,
+            5,
+            5
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "output": [
+          [
+            1,
+            2,
+            3,
+            4,
+            8
+          ],
+          [
+            5,
+            5,
+            5,
+            5,
+            5
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          [
+            3,
+            3,
+            3,
+            3,
+            3
+          ],
+          [
+            4,
+            4,
+            4,
+            4,
+            4
+          ],
+          [
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          [
+            3,
+            3,
+            3,
+            3,
+            3
+          ],
+          [
+            4,
+            4,
+            4,
+            4,
+            4
+          ],
+          [
+            8,
+            8,
+            8,
+            8,
+            8
+          ]
+        ]
+      }
+    },
+    "default_splits": {
+      "train": [
+        "a",
+        "b",
+        "c"
+      ],
+      "test": [
+        "d"
+      ]
+    }
+  },
+  "solve_configuration": {
+    "order_map_type": "default",
+    "order_map": {
+      "train": [
+        "a",
+        "b",
+        "c"
+      ],
+      "test": [
+        "d"
+      ]
+    },
+    "color_map": {
+      "0": {
+        "name": "black",
+        "color": [
+          0,
+          0,
+          0
+        ]
+      },
+      "1": {
+        "name": "blue",
+        "color": [
+          0,
+          70,
+          227
+        ]
+      },
+      "2": {
+        "name": "red",
+        "color": [
+          255,
+          65,
+          54
+        ]
+      },
+      "3": {
+        "name": "green",
+        "color": [
+          46,
+          204,
+          64
+        ]
+      },
+      "4": {
+        "name": "yellow",
+        "color": [
+          255,
+          220,
+          0
+        ]
+      },
+      "5": {
+        "name": "grey",
+        "color": [
+          170,
+          170,
+          170
+        ]
+      },
+      "6": {
+        "name": "pink",
+        "color": [
+          240,
+          18,
+          190
+        ]
+      },
+      "7": {
+        "name": "orange",
+        "color": [
+          255,
+          133,
+          27
+        ]
+      },
+      "8": {
+        "name": "aqua",
+        "color": [
+          15,
+          230,
+          253
+        ]
+      },
+      "9": {
+        "name": "purple",
+        "color": [
+          128,
+          0,
+          255
+        ]
+      }
+    },
+    "metadata_labels": {
+      "Rotational": false,
+      "Horizontal": false,
+      "Vertical": false,
+      "Translation": false,
+      "Invertable": false
+    }
+  },
+  "training_pairs": [
+    "a",
+    "b",
+    "c"
+  ],
+  "test_pairs": [
+    "d"
+  ],
+  "thoughts": {
+    "a": "The input and output grids are the same size. There's a large background color section of black and below what seems to be a horizontal barrier line of gray with some single tile colors above that. Those single tile colors look to be now mapping the sequence of rows. and what those row colors should be. So starting from left to right, the first column is green, second column is red, the third column is blue, the fourth column is yellow. Accordingly, the first row will be green. row will be red, second, third row will be blue, and the fourth row will be yellow. The pattern continues. and repeats again. The hypothesis is that there will be a mapping of the color order that should be filled in with the rows going from left to right above a gray boundary horizontal line.",
+    "b": "We again see a very similar Input and output. There is a gray boundary horizontal line above which Part 3 single tile colors, in this case red, blue, and yellow. The background color black is then filled in with this order, which is derived from the left to right. First column, second column, third column. Those correspond to first row being red, second row row being blue, third row being yellow, and then it repeats with the fourth row being red, fifth row being blue, and sixth row being yellow. Hypothesis still holds",
+    "c": "Can we see input and output grid that is the same size and now they're only two columns. We have a gray horizontal line above which has two single tile colors. aqua, and then green. So the first row will be aqua, the second row will be green, third row below the horizontal gray line will be aqua, the fourth row below the horizontal gray line and the output will be green.",
+    "d": "We apply the hypothesis. Now horizontal of gray line above it has five single tile colors blue red yellow, and aqua. Therefore, the rows below the gray horizontal line will be filled in in that same order of blue, then red. green, then yellow, then aqua. And again, blue, then red, then green, then yellow, then aqua."
+  },
+  "summary": {
+    "total_training_pairs": 3,
+    "total_test_pairs": 1,
+    "total_thoughts": 4,
+    "has_cleaned_thoughts": true,
+    "has_arc_agi_task": true
+  }
+}

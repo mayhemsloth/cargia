@@ -24,7 +24,7 @@ There were a few unforeseen speed bumps along the way.
 3. **Supervised fine-tuning is not the way.** As someone coming from a more computer-vision based ML background, I have little to no hands-on coding experience with reinforcement learning. Supervised fine-tuning the LLM on such a small dataset of thoughts would likely *not* get me where I wanted to be, which was for the VLM to generalize the very structure of the response flow during the solve. That's because there are many, many ways to say the words and concepts that I wanted to get across, and SFT doesn't correctly account for that. But reinforcment learning does. ARC-AGI seems like the ultimate candidate for VLM-based reinforcement learning because there's a *huge* verifiable reward signal at the end of a sequence of reasoning: namely, did the model get the test output grid *exactly* correct. 
 3. **Big labs might just solve it entirely with scaling?** I started working on this in April 2025 and it is now October 2025, and there has been *insane* progress in world model-type of AI models. In my opinioin, having visual priors and understanding of objectness, translation and rotation in space, overlapping dimensions, etc. is paramount to solving ARC-AGI puzzles. Solving these puzzles is not just about understanding images and what's in them; it's about how things in images move or can be transformed and how objects normally interact in the world. This description is much closer to needing a full understanding of how the physical world actually works, and I'm not sure even the most capable text-only LLM can understand that (someday there *likely will be* a model that can solve ACR-AGI with only the text-grids!). 
 
-So I kind of stopped the project. I want to move on and, before the competition deadline, I am going to make this repository public and post it in the ARC-AGI Discord, so that anyway can, if they want to, use the thoughts and solves data stored in the thoughts.db and solves.db database files to help them in their efforts.
+**So I stopped the project**. I want to move on and, before the competition deadline, I am going to make this repository public and post it in the ARC-AGI Discord, so that anyone can, if they want to, use the thoughts and solves data stored in the thoughts.db and solves.db database files to help them in their efforts.
 
 
 # Cargia: ARC-AGI Data Labeling and Model Training Tool
@@ -197,11 +197,20 @@ The training system follows a systematic approach:
 - **Character invariance testing** - Verify symbol substitution
 - **Spatial transform testing** - Check geometric transformations
 - **Text cleaning validation** - Ensure LLM cleaning quality
+- **Data consolidation testing** - Validate unified data export/import
 
 ### **Data Validation**
 - **Schema validation** for database consistency
 - **Cross-reference checking** between solves and thoughts
 - **Export validation** for training data integrity
+
+### **Data Consolidation System**
+- **Unified JSON export** - Consolidate fragmented data into single files per solve
+- **Easy data access** - Load, filter, and analyze solve data without database queries
+- **Portable format** - Share and archive complete solve information
+- **Rich metadata** - Include timing, user info, and data quality indicators
+
+See `scripts/README_data_consolidation.md` for detailed documentation.
 
 ## 🌐 Cloud Deployment
 

@@ -1,0 +1,259 @@
+{
+  "metadata": {
+    "solve_id": 3,
+    "task_id": "e9afcf9a",
+    "user_id": "Thomas",
+    "solve_duration_seconds": 208,
+    "start_time": "2025-05-05T19:32:43.105811",
+    "end_time": "2025-05-05T19:36:12.002252",
+    "export_timestamp": "2025-10-03T00:26:00.328007",
+    "export_version": "1.0"
+  },
+  "arc_agi_task": {
+    "pairs": {
+      "a": {
+        "input": [
+          [
+            4,
+            4,
+            4,
+            4,
+            4,
+            4
+          ],
+          [
+            8,
+            8,
+            8,
+            8,
+            8,
+            8
+          ]
+        ],
+        "output": [
+          [
+            4,
+            8,
+            4,
+            8,
+            4,
+            8
+          ],
+          [
+            8,
+            4,
+            8,
+            4,
+            8,
+            4
+          ]
+        ]
+      },
+      "b": {
+        "input": [
+          [
+            3,
+            3,
+            3,
+            3,
+            3,
+            3
+          ],
+          [
+            9,
+            9,
+            9,
+            9,
+            9,
+            9
+          ]
+        ],
+        "output": [
+          [
+            3,
+            9,
+            3,
+            9,
+            3,
+            9
+          ],
+          [
+            9,
+            3,
+            9,
+            3,
+            9,
+            3
+          ]
+        ]
+      },
+      "c": {
+        "input": [
+          [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ]
+        ],
+        "output": [
+          [
+            6,
+            2,
+            6,
+            2,
+            6,
+            2
+          ],
+          [
+            2,
+            6,
+            2,
+            6,
+            2,
+            6
+          ]
+        ]
+      }
+    },
+    "default_splits": {
+      "train": [
+        "a",
+        "b"
+      ],
+      "test": [
+        "c"
+      ]
+    }
+  },
+  "solve_configuration": {
+    "order_map_type": "default",
+    "order_map": {
+      "train": [
+        "a",
+        "b"
+      ],
+      "test": [
+        "c"
+      ]
+    },
+    "color_map": {
+      "0": {
+        "name": "black",
+        "color": [
+          0,
+          0,
+          0
+        ]
+      },
+      "1": {
+        "name": "blue",
+        "color": [
+          0,
+          70,
+          227
+        ]
+      },
+      "2": {
+        "name": "red",
+        "color": [
+          255,
+          65,
+          54
+        ]
+      },
+      "3": {
+        "name": "green",
+        "color": [
+          46,
+          204,
+          64
+        ]
+      },
+      "4": {
+        "name": "yellow",
+        "color": [
+          255,
+          220,
+          0
+        ]
+      },
+      "5": {
+        "name": "grey",
+        "color": [
+          170,
+          170,
+          170
+        ]
+      },
+      "6": {
+        "name": "pink",
+        "color": [
+          240,
+          18,
+          190
+        ]
+      },
+      "7": {
+        "name": "orange",
+        "color": [
+          255,
+          133,
+          27
+        ]
+      },
+      "8": {
+        "name": "aqua",
+        "color": [
+          15,
+          230,
+          253
+        ]
+      },
+      "9": {
+        "name": "purple",
+        "color": [
+          128,
+          0,
+          255
+        ]
+      }
+    },
+    "metadata_labels": {
+      "Rotational": true,
+      "Horizontal": true,
+      "Vertical": true,
+      "Translation": false,
+      "Invertable": true
+    }
+  },
+  "training_pairs": [
+    "a",
+    "b"
+  ],
+  "test_pairs": [
+    "c"
+  ],
+  "thoughts": {
+    "a": "We see that the input and output grids are the same size. Therefore, it's likely a translation or moving around of the components of the input grid. The top row is entirely yellow and the bottom row is entirely aqua, and then in the output, we see that the yellow and aqua tiles have have been swapped into an every other row type of situation. So whereas we used to have just the top yellow row be entirely yellow, now it's yellow, aqua, yellow, aqua, yellow, aqua. The bottom row was entirely aqua, and now it's aqua yellow, aqua yellow, aqua yellow. My hypothesis is that there will be a row of colors and you need to swap every other one in the output grid.",
+    "b": "Here we. see that the input grid is entirely green on the first row and entirely purple on the second row and then the output grid is again a every other swapped color for the first and second row So we don't change the first column, that stays the same, then the next color in that row. would be the other color that is below it and vice versa so the first row of all greens becomes green purple, green, purple, green, purple. The second row of all purples becomes purple, green, purple, green, purple, green. The hypothesis holds.",
+    "c": "We apply the hypothesis. Now, the top row is all pink and the bottom row is all red. Therefore, the top row should be starting with pink and being pink, red, pink, red, pink, red. The bottom row should be red, pink, red, pink, red, pink."
+  },
+  "summary": {
+    "total_training_pairs": 2,
+    "total_test_pairs": 1,
+    "total_thoughts": 3,
+    "has_cleaned_thoughts": true,
+    "has_arc_agi_task": true
+  }
+}

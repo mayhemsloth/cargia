@@ -1,5 +1,7 @@
-data/
 cargia_venv/
 *.pyc
 cargia.egg-info/
 runs/
+data/solves_and_thoughts/backups
+data/solves_and_thoughts/dummy_dbs
+docker_rebuild.ps1

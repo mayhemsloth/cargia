@@ -1,0 +1,643 @@
+{
+  "metadata": {
+    "solve_id": 84,
+    "task_id": "99fa7670",
+    "user_id": "Thomas",
+    "solve_duration_seconds": 1020,
+    "start_time": "2025-05-25T16:09:42.462866",
+    "end_time": "2025-05-25T16:26:43.134436",
+    "export_timestamp": "2025-10-03T00:26:00.579876",
+    "export_version": "1.0"
+  },
+  "arc_agi_task": {
+    "pairs": {
+      "a": {
+        "input": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            8,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            5,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "output": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            8
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            8
+          ],
+          [
+            0,
+            0,
+            0,
+            5,
+            5,
+            5
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            5
+          ]
+        ]
+      },
+      "b": {
+        "input": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            6,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        "output": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            6,
+            6
+          ],
+          [
+            0,
+            0,
+            6
+          ]
+        ]
+      },
+      "c": {
+        "input": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            8,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            7,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            6,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "output": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            8,
+            8,
+            8
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            8
+          ],
+          [
+            0,
+            7,
+            7,
+            7,
+            7
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            7
+          ],
+          [
+            0,
+            0,
+            6,
+            6,
+            6
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            6
+          ]
+        ]
+      },
+      "d": {
+        "input": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            2,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            3,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "output": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            2,
+            2,
+            2,
+            2
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            2
+          ],
+          [
+            0,
+            3,
+            3,
+            3,
+            3,
+            3
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            3
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            3
+          ]
+        ]
+      },
+      "e": {
+        "input": [
+          [
+            0,
+            0,
+            0,
+            8,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            7,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "output": [
+          [
+            0,
+            0,
+            0,
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            8
+          ],
+          [
+            0,
+            0,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            7
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            2,
+            2
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2
+          ]
+        ]
+      }
+    },
+    "default_splits": {
+      "train": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "test": [
+        "e"
+      ]
+    }
+  },
+  "solve_configuration": {
+    "order_map_type": "default",
+    "order_map": {
+      "train": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "test": [
+        "e"
+      ]
+    },
+    "color_map": {
+      "0": {
+        "name": "black",
+        "color": [
+          0,
+          0,
+          0
+        ]
+      },
+      "1": {
+        "name": "blue",
+        "color": [
+          0,
+          70,
+          227
+        ]
+      },
+      "2": {
+        "name": "red",
+        "color": [
+          255,
+          65,
+          54
+        ]
+      },
+      "3": {
+        "name": "green",
+        "color": [
+          46,
+          204,
+          64
+        ]
+      },
+      "4": {
+        "name": "yellow",
+        "color": [
+          255,
+          220,
+          0
+        ]
+      },
+      "5": {
+        "name": "grey",
+        "color": [
+          170,
+          170,
+          170
+        ]
+      },
+      "6": {
+        "name": "pink",
+        "color": [
+          240,
+          18,
+          190
+        ]
+      },
+      "7": {
+        "name": "orange",
+        "color": [
+          255,
+          133,
+          27
+        ]
+      },
+      "8": {
+        "name": "aqua",
+        "color": [
+          15,
+          230,
+          253
+        ]
+      },
+      "9": {
+        "name": "purple",
+        "color": [
+          128,
+          0,
+          255
+        ]
+      }
+    },
+    "metadata_labels": {
+      "Rotational": true,
+      "Horizontal": true,
+      "Vertical": true,
+      "Translation": false,
+      "Invertable": true
+    }
+  },
+  "training_pairs": [
+    "a",
+    "b",
+    "c",
+    "d"
+  ],
+  "test_pairs": [
+    "e"
+  ],
+  "thoughts": {
+    "a": "The input and output grids are the same sizes. The input grid contains a black color background with one single aqua tile and one single gray tile. Output grid also contains a black color background with more aqua tiles and more gray tiles. Aqua and gray tiles seem to have grown to the right horizontally until they reach the edge of the output grid and then grow down along the right edge. Thus the hypothesis is the following: The input grid will contain a black color background and some number of unique single tile colors. In order to construct the output grid, we must first identify the lowest of these single starting point tiles, And then grow this tile's color horizontally to the right until it hits the grid edge. After that, we grow this tile's color down until it hits the bottom of the output grid. We repeat the same thing for all the single tile colors in the input grid, always starting from the one closest to the bottom and then moving up. Whenever a tile color would need to grow and occupy a different, already grown tile color, it instead stops.",
+    "b": "The input grid contains a black color background with a single pink tile. According to the hypothesis, we need to identify all of the single color tiles, which in this case, there's only one, pink, and the one closest to the bottom. Because there's only one, we start with the pink one. After that, we grow this tile's pink color horizontally to the right until it hits the right edge of the output grid. then the tile grows down towards the bottom of the output grid until it hits the bottom edge. Because there's only one single tile color in the input grid in this case, we stop there. Because this is what is shown in the output grid, the hypothesis holds.",
+    "c": "The input grid contains a black color background with three single tile colors, aqua, orange, and pink. According to the hypothesis, we need to identify all of the single tile colors and specifically the one that is closest to the bottom of the input grid. In this case, that is pink. To construct the output grid, we need to then do the following operations for each single tile color, in order from lowest to the highest. The pink tile grows to the right horizontally until it hits the right edge of the output grid. At that point it grows down until it hits the bottom edge of the output grid. We repeat this sequence for the orange tile, and when we would try to grow down into a tile that already has a non-background color in it, then we stop growing. This will happen with the orange and the aqua paths. Because the output is exactly this, the hypothesis holds.",
+    "d": "The input grid contains a black color background with two single tile colors, red and green. According to the hypothesis, we first identify all the single tile colors and specifically the one that is closest to the bottom fo the input grid. In this case, that color is green. To construct the output grid that is the same size as the input grid, we grow the green tile horizontally in the same row that it started until it hits the right edge of the output grid. The green path then grows downward along the right edge until it hits the bottom edge of the output grid. We repeat this process for the rest of the tiles, doing the next lowest one, which is in this case the red tile. The red path will thus be stopped by the already present green path alonf the edge of the output grid. Because this is exactly what is shown in the output grid, the hypothesis holds.",
+    "e": "We apply the hypothesis here. The input grid has a black background with three unique single tile colors: aqua, orange, and red. Red is the lowest, orange is the next lowest, and aqua is the next lowest. According to the hypothesis, in order to construct the output grid which is the same size as the input grid, we need to identify the lowest single tile color in the input grid. In this case, that is red. Starting from that exact location in the output grid, the red tile grows horizontally to the right until it hits the right edge of the output grid, at which point it grows down vertically until it hits the bottom edge of the output grid. This process is repeated for orange and then aqua. Whenever orange or aqua would encounter a tile that it needs to grow vertically down into but it is occupied already by a non-background color (red or orange, respectively, in this case) those tile growths instead stop. The output grid should thus contain three horizontal lines that start from the original single tile lines, along with the right edge colored according to the process."
+  },
+  "summary": {
+    "total_training_pairs": 4,
+    "total_test_pairs": 1,
+    "total_thoughts": 5,
+    "has_cleaned_thoughts": true,
+    "has_arc_agi_task": true
+  }
+}
