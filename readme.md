@@ -121,29 +121,9 @@ pip install -e .
 # For development dependencies
 pip install -e ".[dev]"
 
-# Set up environment variables (optional)
+# Set up environment variables (optional, only needed for TRAINING, not for data collection)
 export GEMMA3_MODEL_PATH="/path/to/your/gemma3-4b-it-ORIGINAL"
 ```
-
-### Configuration
-
-The training system uses environment variables for flexible path configuration:
-
-#### **Model Path Configuration**
-```bash
-# Set the Gemma3 model path
-export GEMMA3_MODEL_PATH="/path/to/your/gemma3-4b-it-ORIGINAL"
-
-# Or on Windows
-set GEMMA3_MODEL_PATH=C:\path\to\your\gemma3-4b-it-ORIGINAL
-```
-
-If `GEMMA3_MODEL_PATH` is not set, the system will default to `gemma3-4b-it-ORIGINAL` (expecting the model to be in the current directory or available via Hugging Face).
-
-#### **Data Paths**
-- **GUI data directory**: Set via `settings.json` or GUI settings
-- **Training data**: Configured in YAML config files
-- **Cloud deployment**: Uses RunPod volume mounts
 
 ### Quick Start
 
@@ -167,6 +147,27 @@ python cargia/training/train_cli.py --config cargia/training/configs/step_1_over
 # Full dataset training
 python cargia/training/train_cli.py --config cargia/training/configs/step_5_full_dataset.yaml --cloud
 ```
+
+### Configuration
+
+The training system uses environment variables for flexible path configuration:
+
+#### **Model Path Configuration**
+```bash
+# Set the Gemma3 model path
+export GEMMA3_MODEL_PATH="/path/to/your/gemma3-4b-it-ORIGINAL"
+
+# Or on Windows
+set GEMMA3_MODEL_PATH=C:\path\to\your\gemma3-4b-it-ORIGINAL
+```
+
+If `GEMMA3_MODEL_PATH` is not set, the system will default to `gemma3-4b-it-ORIGINAL` (expecting the model to be in the current directory or available via Hugging Face).
+
+#### **Data Paths**
+- **GUI data directory**: Set via `settings.json` or GUI settings
+- **Training data**: Configured in YAML config files
+- **Cloud deployment**: Uses RunPod volume mounts
+
 
 ## 📊 Training Pipeline
 
