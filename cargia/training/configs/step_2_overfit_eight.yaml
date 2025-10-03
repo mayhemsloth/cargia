@@ -6,7 +6,7 @@ training:
   data_dir: data/solves_and_thoughts
   source_folder: data/arc_agi_2_reformatted
   data_sample_maximum_limit: 8
-  start_checkpoint_path: C:\Users\thomas\proj\arcagi\local_data\model_weights\gemma3-4b-it-ORIGINAL
+  start_checkpoint_path: ${GEMMA3_MODEL_PATH:-gemma3-4b-it-ORIGINAL}
   assistant_only_loss: true
   grid_loss_weight: 10.0
   binary_grid_loss_weight: 50.0
@@ -42,7 +42,7 @@ paths:
   local:
     data_dir: data/solves_and_thoughts
     source_folder: data/arc_agi_2_reformatted
-    start_checkpoint_path: C:\Users\thomas\proj\arcagi\local_data\model_weights\gemma3-4b-it-ORIGINAL
+    start_checkpoint_path: ${GEMMA3_MODEL_PATH:-gemma3-4b-it-ORIGINAL}
     output_dir: ./runs
   cloud:
     data_dir: /data/solves_and_thoughts

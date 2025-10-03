@@ -3,6 +3,7 @@ Configuration settings for model training.
 """
 from dataclasses import dataclass
 from typing import Optional
+import os
 import torch
 
 @dataclass
@@ -20,7 +21,7 @@ class TrainingConfig:
     data_sample_maximum_limit: Optional[int] = None  # None = use full dataset, int = limit total samples
     
     # Model configuration
-    start_checkpoint_path: str = "C:\\Users\\thomas\\proj\\arcagi\\local_data\\model_weights\\gemma3-4b-it-ORIGINAL" # if None, will start from scratch
+    start_checkpoint_path: str = os.getenv("GEMMA3_MODEL_PATH", "gemma3-4b-it-ORIGINAL") # if None, will start from scratch
     
     # Training control
     max_steps: int = 1000  # Maximum training steps (useful for overfitting tests)

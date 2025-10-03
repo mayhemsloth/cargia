@@ -173,6 +173,85 @@ class CargiaGoogleGemma3Trainer:
             # callbacks          = [AugmentSwitchCallback(self.train_collate, self.eval_collate)]
         )
 
+    def _arc_collate(self, examples, *, is_training: bool, assistant_only_loss: bool = False, analyze_mode: bool = False):
+        texts, images = [], []
+
+        for ex in examples:
+            # convert the task_raw to a SolveData object for the DataHarness class
+            if isinstance(ex["task_raw"], dict):
+                task = SolveData(**ex["task_raw"]) # task variable is a SolveData object
+            else:
+                task = ex["task_raw"] # task variable is a SolveData object
+           
+            # ➊  stochastic augmentation on raw text every epoch / worker
+            conv = self.harness.create_training_conversation(
+                task, is_training=is_training
+            )
+
+            # ➋  build chat-template string (dynamic turns OK)
+            txt = self.processor.apply_chat_template(
+                    conv,
+                    add_generation_prompt=False,
+                    tokenize=False).strip()
+            # print(txt)
+            texts.append(txt)
+
+            # ➌  collect PIL images matching <boi> tokens
+            images.append(self.process_vision_info(conv))
+
+        # If in analyze mode, return token lengths instead of full batch
+        if analyze_mode:
+            token_lengths = []
+            for i, text in enumerate(texts):
+                # Process with images if available (same as training)
+                if len(images) > 0 and i < len(images):
+                    batch = self.processor(
+                        text=[text],
+                        images=images[i],
+                        return_tensors="pt",
+                        padding=False,  # No padding to get true length
+                        truncation=False,  # No truncation to get true length
+                        add_special_tokens=True
+                    )
+                else:
+                    batch = self.processor(
+                        text=[text],
+                        return_tensors="pt",
+                        padding=False,  # No padding to get true length
+                        truncation=False,  # No truncation to get true length
+                        add_special_tokens=True
+                    )
+                token_lengths.append(batch["input_ids"].shape[1])
+            return token_lengths
+
+        # ➍  processor → tensors (normal training mode)
+        if len(images) > 0:
+            batch = self.processor(text=texts, 
+                                images=images,
+                                return_tensors="pt",
+                                padding=False,
+                                truncation=False,
+                                max_length=16384)
+        else:
+            batch = self.processor(text=texts,
+                                return_tensors="pt",
+                                padding=False,
+                                truncation=False,
+                                max_length=16384)
+
+        # ➎  label masking (same as Google tutorial)
+        # print(f"{batch['input_ids'].shape=}")
+        labels = batch["input_ids"].clone()
+        pad_id = self.processor.tokenizer.pad_token_id
+        boi_id = self.processor.tokenizer.convert_tokens_to_ids(self.processor.tokenizer.special_tokens_map["boi_token"])
+        labels[(labels == pad_id) | (labels == boi_id) | (labels == 262144)] = -100
+
+        # TODO: add proper handling of assistant_only_loss by identifying the tokens for <start_of_turn>user and then subsequent tokens until <end_of_turn>
+        
+        batch["labels"] = labels
+
+        return batch
+    
     def custom_grid_loss_function(self, outputs, labels, num_items_in_batch=None):
         """
         Custom loss function that recreates standard LabelSmoother logic and adds
@@ -760,85 +839,7 @@ class CargiaGoogleGemma3Trainer:
                 if isinstance(part, dict) and part.get("type") == "image":
                     imgs.append(part["image"])
         return imgs
-    
-    def _arc_collate(self, examples, *, is_training: bool, assistant_only_loss: bool = False, analyze_mode: bool = False):
-        texts, images = [], []
 
-        for ex in examples:
-            # convert the task_raw to a SolveData object for the DataHarness class
-            if isinstance(ex["task_raw"], dict):
-                task = SolveData(**ex["task_raw"]) # task variable is a SolveData object
-            else:
-                task = ex["task_raw"] # task variable is a SolveData object
-           
-            # ➊  stochastic augmentation on raw text every epoch / worker
-            conv = self.harness.create_training_conversation(
-                task, is_training=is_training
-            )
-
-            # ➋  build chat-template string (dynamic turns OK)
-            txt = self.processor.apply_chat_template(
-                    conv,
-                    add_generation_prompt=False,
-                    tokenize=False).strip()
-            # print(txt)
-            texts.append(txt)
-
-            # ➌  collect PIL images matching <boi> tokens
-            images.append(self.process_vision_info(conv))
-
-        # If in analyze mode, return token lengths instead of full batch
-        if analyze_mode:
-            token_lengths = []
-            for i, text in enumerate(texts):
-                # Process with images if available (same as training)
-                if len(images) > 0 and i < len(images):
-                    batch = self.processor(
-                        text=[text],
-                        images=images[i],
-                        return_tensors="pt",
-                        padding=False,  # No padding to get true length
-                        truncation=False,  # No truncation to get true length
-                        add_special_tokens=True
-                    )
-                else:
-                    batch = self.processor(
-                        text=[text],
-                        return_tensors="pt",
-                        padding=False,  # No padding to get true length
-                        truncation=False,  # No truncation to get true length
-                        add_special_tokens=True
-                    )
-                token_lengths.append(batch["input_ids"].shape[1])
-            return token_lengths
-
-        # ➍  processor → tensors (normal training mode)
-        if len(images) > 0:
-            batch = self.processor(text=texts, 
-                                images=images,
-                                return_tensors="pt",
-                                padding=False,
-                                truncation=False,
-                                max_length=16384)
-        else:
-            batch = self.processor(text=texts,
-                                return_tensors="pt",
-                                padding=False,
-                                truncation=False,
-                                max_length=16384)
-
-        # ➎  label masking (same as Google tutorial)
-        print(f"{batch['input_ids'].shape=}")
-        labels = batch["input_ids"].clone()
-        pad_id = self.processor.tokenizer.pad_token_id
-        boi_id = self.processor.tokenizer.convert_tokens_to_ids(self.processor.tokenizer.special_tokens_map["boi_token"])
-        labels[(labels == pad_id) | (labels == boi_id) | (labels == 262144)] = -100
-
-        # TODO: add proper handling of assistant_only_loss by identifying the tokens for <start_of_turn>user and then subsequent tokens until <end_of_turn>
-        
-        batch["labels"] = labels
-
-        return batch
     
 class AugmentSwitchCallback(TrainerCallback):
     def __init__(self, train_collate, eval_collate):
