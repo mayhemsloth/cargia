@@ -50,6 +50,7 @@ ARC-AGI is a benchmark designed to test AI systems' ability to perform abstract 
 - **Step-by-step reasoning capture** with voice transcription support
 - **Metadata annotation** including color maps, character mappings, and spatial invariances
 - **SQLite database storage** for structured data management
+- **Viewer Mode** for reviewing previously collected solves with full context and navigation
 
 #### **Training Pipeline** (`cargia/training/`)
 - **Gemma3 fine-tuning** with LoRA (Low-Rank Adaptation) for efficient training
@@ -140,6 +141,12 @@ If `GEMMA3_MODEL_PATH` is not set, the system will default to `gemma3-4b-it-ORIG
 python -m cargia.main
 ```
 
+**Key Features:**
+- **Collection Mode**: Annotate new ARC-AGI tasks with step-by-step reasoning
+- **Viewer Mode**: Review previously collected solves with full navigation
+- **Voice Transcription**: Real-time speech-to-text for efficient annotation
+- **Smart Navigation**: Previous/Next solve and pair navigation in viewer mode
+
 #### **Training**
 ```bash
 # Test training pipeline with single sample
@@ -189,6 +196,14 @@ The training system follows a systematic approach:
 3. **Record step-by-step reasoning** via text or voice
 4. **Annotate metadata** (colors, characters, spatial properties)
 5. **Export structured data** for training
+
+### **Viewer Mode**
+- **Review collected solves** with full visual and textual context
+- **Navigate between solves** with Previous/Next Solve buttons
+- **Step through pairs** to see the original reasoning sequence
+- **Stacked pair display** showing the progression of thoughts as they were collected
+- **Read-only interface** prevents accidental data modification
+- **Smart state management** prevents conflicts with active data collection
 
 ### **Quality Assurance**
 - **Visual validation** of color mappings and transformations
