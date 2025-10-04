@@ -116,6 +116,10 @@ ARC-AGI is a benchmark designed to test AI systems' ability to perform abstract 
 git clone <repository-url>
 cd cargia
 
+# Make your own virtual environment in your preferred way
+
+# Activate that virtual environment (conda, uv, venv)
+
 # Install dependencies
 pip install -e .
 
